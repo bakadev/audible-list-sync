@@ -139,20 +139,8 @@ const WishlistScraper = {
 
     console.log('[WishlistScraper] Container found:', container.className);
 
-    // Try multiple selectors to handle different wishlist page structures
-    let rows = container.querySelectorAll('#adbl-library-content-main > .adbl-library-content-row');
-
-    // Fallback: try without the ID selector
-    if (rows.length === 0) {
-      rows = container.querySelectorAll('.adbl-library-content-row');
-      console.log('[WishlistScraper] Using fallback selector (no ID constraint)');
-    }
-
-    // Fallback 2: try with different container ID
-    if (rows.length === 0) {
-      rows = container.querySelectorAll('[id*="content"] > [class*="row"]');
-      console.log('[WishlistScraper] Using generic row selector');
-    }
+    // Wishlist pages use li.productListItem instead of .adbl-library-content-row
+    const rows = container.querySelectorAll('li.productListItem');
 
     console.log(`[WishlistScraper] Found ${rows.length} wishlist rows`);
     return Array.from(rows);

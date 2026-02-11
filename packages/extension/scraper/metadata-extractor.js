@@ -133,8 +133,8 @@ const MetadataExtractor = {
         return null;
       }
 
-      // Title
-      const titleElement = row.querySelector('.bc-list-item-title');
+      // Title (wishlist uses .bc-size-headline3)
+      const titleElement = row.querySelector('.bc-size-headline3') || row.querySelector('.bc-list-item-title');
       const title = titleElement?.textContent?.trim() || 'Unknown Title';
 
       // Authors
