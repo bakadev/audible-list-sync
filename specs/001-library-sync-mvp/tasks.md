@@ -151,16 +151,16 @@
 
 **Purpose**: Final improvements affecting multiple user stories
 
-- [ ] T055 [P] Add responsive design breakpoints to all pages (mobile, tablet, desktop) with Tailwind responsive classes
-- [ ] T056 [P] Add loading skeletons to library page while fetching titles
-- [ ] T057 [P] Add toast notifications for user actions (sync started, import successful, errors) using shadcn/ui Toast component
-- [ ] T058 [P] Add proper error pages: 404 in packages/ui/src/app/not-found.tsx, 500 in packages/ui/src/app/error.tsx
-- [ ] T059 [P] Optimize images with next/image component for cover art in TitleCard
-- [ ] T060 [P] Add metadata and SEO tags to all pages (title, description, og tags)
-- [ ] T061 Add Prisma Studio script to packages/ui/package.json for visual database browsing
-- [ ] T062 [P] Document environment variables in packages/ui/README.md with setup instructions
-- [ ] T063 Validate TypeScript compilation with no errors: run tsc --noEmit
-- [ ] T064 [P] Run ESLint and fix any warnings in packages/ui/src/
+- [x] T055 [P] Add responsive design breakpoints to all pages (mobile, tablet, desktop) with Tailwind responsive classes
+- [x] T056 [P] Add loading skeletons to library page while fetching titles
+- [x] T057 [P] Add toast notifications for user actions (sync started, import successful, errors) using Sonner toast library
+- [x] T058 [P] Add proper error pages: 404 in packages/ui/src/app/not-found.tsx, 500 in packages/ui/src/app/error.tsx
+- [x] T059 [P] Optimize images with next/image component for cover art in TitleCard
+- [x] T060 [P] Add metadata and SEO tags to all pages (title, description, og tags)
+- [x] T061 Add Prisma Studio script to packages/ui/package.json for visual database browsing
+- [x] T062 [P] Document environment variables in packages/ui/README.md with setup instructions
+- [x] T063 Validate TypeScript compilation with no errors: run tsc --noEmit
+- [x] T064 [P] Run ESLint and fix any warnings in packages/ui/src/
 
 ---
 

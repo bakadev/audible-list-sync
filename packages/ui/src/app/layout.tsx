@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { Toaster } from "sonner";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -13,8 +14,26 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Audible Lists - Organize & Share Your Audiobook Library",
+  title: {
+    default: "Audible Lists - Organize & Share Your Audiobook Library",
+    template: "%s | Audible Lists",
+  },
   description: "Sync your Audible library, browse your audiobook collection, and create recommendation lists to share with friends.",
+  keywords: ["audible", "audiobooks", "library", "lists", "recommendations", "book tracker"],
+  authors: [{ name: "Audible Lists" }],
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "https://audiblelists.com",
+    title: "Audible Lists - Organize & Share Your Audiobook Library",
+    description: "Sync your Audible library, browse your audiobook collection, and create recommendation lists to share with friends.",
+    siteName: "Audible Lists",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Audible Lists - Organize & Share Your Audiobook Library",
+    description: "Sync your Audible library, browse your audiobook collection, and create recommendation lists to share with friends.",
+  },
 };
 
 export default function RootLayout({
@@ -28,6 +47,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         {children}
+        <Toaster position="top-right" richColors />
       </body>
     </html>
   );

@@ -1,6 +1,12 @@
+import { Metadata } from "next";
 import { signIn } from "@/lib/auth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+
+export const metadata: Metadata = {
+  title: "Sign In",
+  description: "Sign in to access your Audible library",
+};
 
 export default async function SignInPage({
   searchParams,

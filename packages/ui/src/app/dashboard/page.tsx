@@ -1,9 +1,15 @@
+import { Metadata } from "next";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { SyncStatus } from "@/components/dashboard/sync-status";
 import { ConnectExtensionButton } from "@/components/dashboard/connect-extension-button";
 import { SyncHistoryTable } from "@/components/dashboard/sync-history-table";
 import { Card } from "@/components/ui/card";
+
+export const metadata: Metadata = {
+  title: "Dashboard",
+  description: "Manage your Audible library and sync history",
+};
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -84,7 +90,7 @@ export default async function DashboardPage() {
             <div className="space-y-3">
               <h3 className="text-lg font-semibold">How to Connect</h3>
               <ol className="space-y-2 text-sm text-muted-foreground list-decimal list-inside">
-                <li>Click the "Connect Extension" button above</li>
+                <li>Click the &quot;Connect Extension&quot; button above</li>
                 <li>A new tab will open to Audible with a secure sync token</li>
                 <li>The browser extension will automatically detect and use the token</li>
                 <li>Your library will be synced in the background</li>

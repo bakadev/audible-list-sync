@@ -1,5 +1,11 @@
+import { Metadata } from "next";
 import { auth } from "@/lib/auth";
 import { LibraryContent } from "@/components/library/library-content";
+
+export const metadata: Metadata = {
+  title: "Library",
+  description: "Browse and search your Audible collection",
+};
 
 export default async function LibraryPage() {
   const session = await auth();

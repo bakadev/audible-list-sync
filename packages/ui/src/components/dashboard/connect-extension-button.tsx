@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 
 interface ConnectExtensionButtonProps {
@@ -36,13 +37,18 @@ export function ConnectExtensionButton({
       // Open Audible URL in a new tab with the token
       window.open(data.audibleUrl, "_blank", "noopener,noreferrer");
 
-      // Optionally show success message
-      // In a real app, you might show a toast notification here
+      // Show success toast
+      toast.success(
+        hasSyncedBefore
+          ? "Sync token generated! Opening Audible..."
+          : "Connection ready! Opening Audible..."
+      )
     } catch (err) {
       console.error("Error connecting extension:", err);
-      setError(
-        err instanceof Error ? err.message : "Failed to connect extension"
-      );
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to connect extension";
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setIsLoading(false);
     }

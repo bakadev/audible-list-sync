@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { TitleCard } from "./title-card";
 import { SearchBar } from "./search-bar";
 import { EmptyState } from "./empty-state";
+import { LibrarySkeleton } from "./library-skeleton";
 
 interface LibraryItem {
   id: string;
@@ -73,14 +74,7 @@ export function LibraryContent() {
     return (
       <div className="space-y-6">
         <SearchBar onSearch={setSearchQuery} />
-        <div className="grid gap-4">
-          {[1, 2, 3].map((i) => (
-            <div
-              key={i}
-              className="h-40 animate-pulse rounded-lg bg-muted"
-            />
-          ))}
-        </div>
+        <LibrarySkeleton />
       </div>
     );
   }
