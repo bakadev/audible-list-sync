@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
 import { SyncStatus } from "@/components/dashboard/sync-status";
 import { ConnectExtensionButton } from "@/components/dashboard/connect-extension-button";
+import { SyncHistoryTable } from "@/components/dashboard/sync-history-table";
 import { Card } from "@/components/ui/card";
 
 export default async function DashboardPage() {
@@ -14,7 +15,7 @@ export default async function DashboardPage() {
   const userId = session.user.id;
 
   // Fetch sync history and library stats
-  const [lastSync, libraryStats] = await Promise.all([
+  const [lastSync, libraryStats, syncHistory] = await Promise.all([
     prisma.syncHistory.findFirst({
       where: { userId },
       orderBy: { syncedAt: 'desc' },
@@ -22,6 +23,11 @@ export default async function DashboardPage() {
     prisma.userLibrary.aggregate({
       where: { userId },
       _count: { id: true },
+    }),
+    prisma.syncHistory.findMany({
+      where: { userId },
+      orderBy: { syncedAt: 'desc' },
+      take: 5,
     }),
   ]);
 
@@ -90,6 +96,24 @@ export default async function DashboardPage() {
               </p>
             </div>
           </Card>
+        )}
+
+        {hasSyncedBefore && syncHistory.length > 0 && (
+          <div className="space-y-4">
+            <h2 className="text-2xl font-bold">Sync History</h2>
+            <SyncHistoryTable
+              history={syncHistory.map(h => ({
+                id: h.id,
+                syncedAt: h.syncedAt.toISOString(),
+                titlesImported: h.titlesImported,
+                newToCatalog: h.newToCatalog,
+                libraryCount: h.libraryCount,
+                wishlistCount: h.wishlistCount,
+                success: h.success,
+                warnings: h.warnings,
+              }))}
+            />
+          </div>
         )}
       </div>
     </div>

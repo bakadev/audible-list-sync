@@ -135,13 +135,13 @@
 
 ### Implementation for Dashboard
 
-- [ ] T048 [P] [US5] Create GET /api/sync/history route in packages/ui/src/app/api/sync/history/route.ts that queries SyncHistory for user, returns last 5 events ordered by syncedAt DESC
-- [ ] T049 [P] [US5] Create SyncHistoryTable component in packages/ui/src/components/dashboard/sync-history-table.tsx displaying sync events with timestamp, counts, warnings, success status
-- [ ] T050 [US5] Update SyncStatus component to fetch /api/library/stats and display total counts, library/wishlist breakdown, last sync timestamp
-- [ ] T051 [US5] Update ConnectExtensionButton to show "Update library" text if user has synced before (check SyncHistory)
-- [ ] T052 [US5] Update dashboard page to fetch /api/sync/history and display SyncHistoryTable below sync status
-- [ ] T053 [US5] Add loading states to dashboard components (skeleton placeholders for SyncStatus, SyncHistoryTable while fetching)
-- [ ] T054 [US5] Add error handling to dashboard: if API calls fail, show error message with retry button
+- [x] T048 [P] [US5] Create GET /api/sync/history route in packages/ui/src/app/api/sync/history/route.ts that queries SyncHistory for user, returns last 5 events ordered by syncedAt DESC
+- [x] T049 [P] [US5] Create SyncHistoryTable component in packages/ui/src/components/dashboard/sync-history-table.tsx displaying sync events with timestamp, counts, warnings, success status
+- [x] T050 [US5] Update SyncStatus component to fetch /api/library/stats and display total counts, library/wishlist breakdown, last sync timestamp
+- [x] T051 [US5] Update ConnectExtensionButton to show "Update library" text if user has synced before (check SyncHistory)
+- [x] T052 [US5] Update dashboard page to fetch /api/sync/history and display SyncHistoryTable below sync status
+- [x] T053 [US5] Add loading states to dashboard components (skeleton placeholders for SyncStatus, SyncHistoryTable while fetching)
+- [x] T054 [US5] Add error handling to dashboard: if API calls fail, show error message with retry button
 
 **Checkpoint**: Dashboard fully functional with sync history, stats, and re-sync capability
 
