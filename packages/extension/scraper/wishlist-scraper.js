@@ -24,8 +24,8 @@ const WishlistScraper = {
 
       console.log(`[WishlistScraper] Max page size: ${maxPageSize}`);
 
-      // Step 2: Build URL with max page size
-      const baseUrl = new URL(window.location.href);
+      // Step 2: Build URL with max page size (always use wishlist URL, not window.location)
+      const baseUrl = new URL('https://www.audible.com/wl');
       baseUrl.searchParams.set('pageSize', maxPageSize);
       baseUrl.searchParams.set('page', '1');
 
@@ -90,11 +90,11 @@ const WishlistScraper = {
       };
     } catch (error) {
       console.error('[WishlistScraper] Pagination detection failed:', error);
-      // Fallback: return current page only
+      // Fallback: return wishlist URL (not window.location which might be library page)
       return {
         totalPages: 1,
         pageSize: 50,
-        pageUrls: [window.location.href],
+        pageUrls: ['https://www.audible.com/wl'],
         firstPageDoc: null,
       };
     }
