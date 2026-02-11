@@ -84,10 +84,10 @@ All paths relative to `packages/extension/` directory:
 
 ### Implementation for User Story 2
 
-- [ ] T022 [P] [US2] Implement wishlist page pagination and scraping in scraper/wishlist-scraper.js (reuse library-scraper.js pagination logic, extract same basic metadata)
-- [ ] T023 [US2] Add wishlist navigation logic to content-script.js (after library complete, programmatically fetch audible.com/wl, detect 403/404 if unavailable)
-- [ ] T024 [US2] Update JSON normalizer in utils/json-normalizer.js to flag entries with source: "LIBRARY" or "WISHLIST", apply library precedence for duplicates
-- [ ] T025 [US2] Update overlay UI in overlay-ui.js to show wishlist scraping phase ("Scraping wishlist page X of Y") and final summary with library vs wishlist counts
+- [X] T022 [P] [US2] Implement wishlist page pagination and scraping in scraper/wishlist-scraper.js (reuse library-scraper.js pagination logic, extract same basic metadata)
+- [X] T023 [US2] Add wishlist navigation logic to content-script.js (after library complete, programmatically fetch audible.com/wl, detect 403/404 if unavailable)
+- [X] T024 [US2] Update JSON normalizer in utils/json-normalizer.js to flag entries with source: "LIBRARY" or "WISHLIST", apply library precedence for duplicates
+- [X] T025 [US2] Update overlay UI in overlay-ui.js to show wishlist scraping phase ("Scraping wishlist page X of Y") and final summary with library vs wishlist counts
 
 **Checkpoint**: At this point, User Stories 1 AND 2 should both work - users can export library + wishlist in single operation
 

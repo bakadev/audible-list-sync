@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Audible Library Extension",
-  "version": "1.0.11",
+  "version": "1.0.12",
   "description": "Export your Audible library data with comprehensive metadata for backup and analysis",
   "permissions": [
     "activeTab",
@@ -23,6 +23,7 @@
         "utils/json-normalizer.js",
         "scraper/metadata-extractor.js",
         "scraper/library-scraper.js",
+        "scraper/wishlist-scraper.js",
         "scraper/store-scraper.js",
         "overlay-ui.js",
         "content-script.js"
