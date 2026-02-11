@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { FloatingNav } from "@/components/shared/floating-nav";
 import { Footer } from "@/components/shared/footer";
+import { Container } from "@/components/ui/container";
 
 export default async function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
@@ -10,10 +11,10 @@ export default async function AuthenticatedLayout({ children }: { children: Reac
   }
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <Container className="flex min-h-screen flex-col">
       <FloatingNav user={session.user} />
       <main className="flex-1">{children}</main>
       <Footer />
-    </div>
+    </Container>
   );
 }
