@@ -485,6 +485,7 @@ const MetadataExtractor = {
    * DOM Patterns:
    * 1. Finished: <span id="time-remaining-finished-{ASIN}">Finished</span> (must NOT have bc-pub-hidden class)
    * 2. In Progress: <span class="bc-text bc-color-secondary">15h 39m left</span> (inside #time-remaining-display-{ASIN})
+   *    - Also extracts progress percentage from <div role="progressbar" aria-valuenow="63">
    * 3. Not Started: No status element found (default)
    *
    * Note: Audible includes both finished and in-progress elements in DOM, but hides one with bc-pub-hidden class.
@@ -492,7 +493,7 @@ const MetadataExtractor = {
    *
    * @param {Element} element - Library or wishlist row element
    * @param {string} asin - ASIN for ID-based element lookup
-   * @returns {string} Listening status: "Finished", "Not Started", or time remaining (e.g., "15h 39m left")
+   * @returns {string} Listening status: "Finished", "Not Started", or time with percentage (e.g., "15h 39m left (63% complete)")
    */
   extractListeningStatus(element, asin) {
     try {
@@ -505,7 +506,7 @@ const MetadataExtractor = {
         }
       }
 
-      // Pattern 2: Check for in-progress status with time remaining
+      // Pattern 2: Check for in-progress status with time remaining and progress percentage
       const timeDisplayContainer = element.querySelector(`#time-remaining-display-${asin}`);
       if (timeDisplayContainer) {
         const timeText = timeDisplayContainer.querySelector('.bc-text.bc-color-secondary');
@@ -513,6 +514,14 @@ const MetadataExtractor = {
           const text = timeText.textContent.trim();
           // Check if it contains time pattern (e.g., "15h 39m left", "2h 15m left")
           if (text.includes('left')) {
+            // Try to also extract progress percentage from progress bar
+            const progressBar = timeDisplayContainer.querySelector('[role="progressbar"]');
+            if (progressBar) {
+              const percentComplete = progressBar.getAttribute('aria-valuenow');
+              if (percentComplete) {
+                return `${text} (${percentComplete}% complete)`;
+              }
+            }
             return text;
           }
         }
