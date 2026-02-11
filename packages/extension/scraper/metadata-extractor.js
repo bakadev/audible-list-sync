@@ -483,9 +483,12 @@ const MetadataExtractor = {
    * Extract listening progress status from library/wishlist row
    *
    * DOM Patterns:
-   * 1. Finished: <span id="time-remaining-finished-{ASIN}">Finished</span>
+   * 1. Finished: <span id="time-remaining-finished-{ASIN}">Finished</span> (must NOT have bc-pub-hidden class)
    * 2. In Progress: <span class="bc-text bc-color-secondary">15h 39m left</span> (inside #time-remaining-display-{ASIN})
    * 3. Not Started: No status element found (default)
+   *
+   * Note: Audible includes both finished and in-progress elements in DOM, but hides one with bc-pub-hidden class.
+   * We must check visibility to get accurate status.
    *
    * @param {Element} element - Library or wishlist row element
    * @param {string} asin - ASIN for ID-based element lookup
@@ -493,9 +496,9 @@ const MetadataExtractor = {
    */
   extractListeningStatus(element, asin) {
     try {
-      // Pattern 1: Check for "Finished" status
+      // Pattern 1: Check for "Finished" status (only if visible, not hidden)
       const finishedElement = element.querySelector(`#time-remaining-finished-${asin}`);
-      if (finishedElement) {
+      if (finishedElement && !finishedElement.classList.contains('bc-pub-hidden')) {
         const text = finishedElement.textContent.trim();
         if (text.includes('Finished')) {
           return 'Finished';
