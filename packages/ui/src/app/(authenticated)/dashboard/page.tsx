@@ -51,18 +51,18 @@ export default async function DashboardPage() {
   const hasSyncedBefore = !!lastSync;
 
   return (
-    <div className="container max-w-7xl py-10">
-      <div className="space-y-8">
+    <div className="container max-w-6xl py-8 md:py-12">
+      <div className="space-y-6">
         <div className="space-y-2">
-          <h1 className="text-4xl font-bold">
+          <h1 className="text-3xl font-bold md:text-4xl">
             Welcome back, {session.user.name?.split(" ")[0] || "there"}!
           </h1>
-          <p className="text-lg text-muted-foreground">
+          <p className="text-base text-muted-foreground md:text-lg">
             Manage your Audible library and create recommendation lists.
           </p>
         </div>
 
-        <div className="grid gap-6 md:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-2">
           <SyncStatus
             lastSyncedAt={lastSync?.syncedAt?.toISOString() || null}
             totalItems={totalItems}

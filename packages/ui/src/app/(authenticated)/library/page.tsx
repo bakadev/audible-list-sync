@@ -15,11 +15,11 @@ export default async function LibraryPage() {
   }
 
   return (
-    <div className="container max-w-7xl py-10">
-      <div className="space-y-8">
+    <div className="container max-w-6xl py-8 md:py-12">
+      <div className="space-y-6">
         <div className="space-y-2">
-          <h1 className="text-4xl font-bold">Your Library</h1>
-          <p className="text-lg text-muted-foreground">
+          <h1 className="text-3xl font-bold md:text-4xl">Your Library</h1>
+          <p className="text-base text-muted-foreground md:text-lg">
             Browse and search your Audible collection
           </p>
         </div>

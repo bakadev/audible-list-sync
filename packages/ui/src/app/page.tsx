@@ -6,18 +6,23 @@ export default function Home() {
   return (
     <div className="flex min-h-screen flex-col">
       {/* Hero Section */}
-      <section className="flex flex-1 flex-col items-center justify-center py-24 text-center">
-        <div className="container max-w-4xl space-y-8">
-          <div className="space-y-4">
-            <h1 className="text-5xl font-bold tracking-tight sm:text-6xl">
-              Organize & Share Your Audible Library
+      <section className="flex flex-1 flex-col items-center justify-center py-16 md:py-24 lg:py-32">
+        <div className="container max-w-4xl space-y-8 px-4">
+          <div className="space-y-6 text-center">
+            <div className="inline-flex items-center rounded-full border bg-muted px-3 py-1 text-sm">
+              <span className="mr-2">✨</span>
+              <span>Sync, browse, and organize your audiobooks</span>
+            </div>
+            <h1 className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl md:text-6xl md:leading-[1.2]">
+              The perfect place for{" "}
+              <span className="text-primary">Audible listeners</span>
             </h1>
-            <p className="text-xl text-muted-foreground">
-              Sync your Audible collection, browse your titles, and create recommendation lists to share with friends.
+            <p className="mx-auto max-w-2xl text-lg text-muted-foreground sm:text-xl">
+              Sync your Audible library, search your collection, and create recommendation lists to share with fellow audiobook enthusiasts.
             </p>
           </div>
           <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
-            <Button asChild size="lg" className="text-lg">
+            <Button asChild size="lg" className="text-base shadow-sm hover:shadow">
               <Link href="/signin">Get Started with Google</Link>
             </Button>
           </div>
@@ -25,10 +30,10 @@ export default function Home() {
       </section>
 
       {/* Features Section */}
-      <section className="border-t bg-muted/50 py-16">
-        <div className="container max-w-6xl">
-          <h2 className="mb-12 text-center text-3xl font-bold">Features</h2>
-          <div className="grid gap-6 md:grid-cols-3">
+      <section className="border-t bg-muted/50 py-16 md:py-24">
+        <div className="container max-w-6xl px-4">
+          <h2 className="mb-12 text-center text-2xl font-bold md:text-3xl">Features</h2>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             <Card className="p-6">
               <div className="space-y-3">
                 <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary text-primary-foreground">
@@ -108,9 +113,9 @@ export default function Home() {
       </section>
 
       {/* How It Works Section */}
-      <section className="py-16">
-        <div className="container max-w-4xl">
-          <h2 className="mb-12 text-center text-3xl font-bold">How It Works</h2>
+      <section className="py-16 md:py-24">
+        <div className="container max-w-4xl px-4">
+          <h2 className="mb-12 text-center text-2xl font-bold md:text-3xl">How It Works</h2>
           <div className="space-y-8">
             <div className="flex gap-6">
               <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary text-lg font-bold text-primary-foreground">

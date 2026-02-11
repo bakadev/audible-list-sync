@@ -36,10 +36,10 @@ export function TitleCard({
   };
 
   return (
-    <Card className="overflow-hidden">
+    <Card className="overflow-hidden transition-shadow hover:shadow-md">
       <div className="flex gap-4 p-4">
         {/* Cover Image */}
-        <div className="relative h-32 w-24 shrink-0 overflow-hidden rounded bg-muted">
+        <div className="relative h-40 w-28 shrink-0 overflow-hidden rounded-md bg-muted shadow-sm">
           {coverImageUrl ? (
             <Image
               src={coverImageUrl}
@@ -69,34 +69,34 @@ export function TitleCard({
         </div>
 
         {/* Content */}
-        <div className="flex flex-1 flex-col gap-2">
-          <div className="space-y-1">
+        <div className="flex flex-1 flex-col gap-3">
+          <div className="space-y-2">
             <div className="flex items-start justify-between gap-2">
-              <h3 className="font-semibold leading-tight">{title}</h3>
-              <Badge variant={source === "LIBRARY" ? "default" : "outline"}>
+              <h3 className="text-base font-semibold leading-tight">{title}</h3>
+              <Badge variant={source === "LIBRARY" ? "default" : "outline"} className="shrink-0">
                 {source}
               </Badge>
             </div>
             {subtitle && (
-              <p className="text-sm text-muted-foreground">{subtitle}</p>
+              <p className="text-sm text-muted-foreground line-clamp-2">{subtitle}</p>
             )}
           </div>
 
           {authors.length > 0 && (
-            <p className="text-sm">
-              <span className="text-muted-foreground">By:</span>{" "}
-              {authors.join(", ")}
+            <p className="text-sm leading-relaxed">
+              <span className="font-medium text-muted-foreground">By:</span>{" "}
+              <span className="text-foreground">{authors.join(", ")}</span>
             </p>
           )}
 
           {narrators.length > 0 && (
-            <p className="text-sm">
-              <span className="text-muted-foreground">Narrated by:</span>{" "}
-              {narrators.join(", ")}
+            <p className="text-sm leading-relaxed">
+              <span className="font-medium text-muted-foreground">Narrated by:</span>{" "}
+              <span className="text-foreground">{narrators.join(", ")}</span>
             </p>
           )}
 
-          <div className="mt-auto flex items-center gap-4 text-sm text-muted-foreground">
+          <div className="mt-auto flex items-center gap-4 text-xs text-muted-foreground">
             {duration && <span>{formatDuration(duration)}</span>}
             {rating && (
               <span className="flex items-center gap-1">

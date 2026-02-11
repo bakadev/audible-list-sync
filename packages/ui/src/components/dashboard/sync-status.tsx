@@ -39,7 +39,7 @@ export function SyncStatus({
   const state = getConnectionState();
 
   return (
-    <Card className="p-6">
+    <Card className="p-6 transition-shadow hover:shadow-md">
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-lg font-semibold">Sync Status</h3>
