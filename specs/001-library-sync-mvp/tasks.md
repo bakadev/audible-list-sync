@@ -91,16 +91,16 @@
 
 ### Implementation for User Story 3
 
-- [ ] T030 [US3] Create POST /api/sync/import route in packages/ui/src/app/api/sync/import/route.ts with JWT validation from Authorization header
-- [ ] T031 [US3] Implement JWT validation logic in import route: extract token, verify signature, check expiry, extract user ID from sub claim
-- [ ] T032 [US3] Implement SyncToken single-use check: query SyncToken by jti, verify not used, mark as used in transaction
-- [ ] T033 [US3] Implement payload validation in import route: check required fields (titles array, ASIN, title, authors, source, dateAdded), validate types, check size under 50MB
-- [ ] T034 [US3] Implement full-replace import strategy in Prisma transaction: delete all UserLibrary entries for user, then process payload
-- [ ] T035 [US3] Implement title catalog upsert logic: for each title, check ASIN exists in TitleCatalog, insert if new, update if metadata changed
-- [ ] T036 [US3] Implement UserLibrary batch insert: collect all UserLibrary entries from payload, createMany after catalog processing
-- [ ] T037 [US3] Implement SyncHistory logging: after transaction commit, insert SyncHistory record with counts (imported, newToCatalog, libraryCount, wishlistCount) and warnings array
-- [ ] T038 [US3] Implement import response: return JSON with success=true, imported count, newToCatalog count, library/wishlist counts, warnings array
-- [ ] T039 [US3] Implement error handling: catch validation errors (400), token errors (401), transaction errors (500), return appropriate error responses
+- [x] T030 [US3] Create POST /api/sync/import route in packages/ui/src/app/api/sync/import/route.ts with JWT validation from Authorization header
+- [x] T031 [US3] Implement JWT validation logic in import route: extract token, verify signature, check expiry, extract user ID from sub claim
+- [x] T032 [US3] Implement SyncToken single-use check: query SyncToken by jti, verify not used, mark as used in transaction
+- [x] T033 [US3] Implement payload validation in import route: check required fields (titles array, ASIN, title, authors, source, dateAdded), validate types, check size under 50MB
+- [x] T034 [US3] Implement full-replace import strategy in Prisma transaction: delete all UserLibrary entries for user, then process payload
+- [x] T035 [US3] Implement title catalog upsert logic: for each title, check ASIN exists in TitleCatalog, insert if new, update if metadata changed
+- [x] T036 [US3] Implement UserLibrary batch insert: collect all UserLibrary entries from payload, createMany after catalog processing
+- [x] T037 [US3] Implement SyncHistory logging: after transaction commit, insert SyncHistory record with counts (imported, newToCatalog, libraryCount, wishlistCount) and warnings array
+- [x] T038 [US3] Implement import response: return JSON with success=true, imported count, newToCatalog count, library/wishlist counts, warnings array
+- [x] T039 [US3] Implement error handling: catch validation errors (400), token errors (401), transaction errors (500), return appropriate error responses
 
 **Checkpoint**: Import endpoint functional, can process payloads and populate database
 
