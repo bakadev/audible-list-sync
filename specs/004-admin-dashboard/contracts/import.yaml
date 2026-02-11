@@ -1,0 +1,397 @@
+openapi: 3.0.3
+info:
+  title: Admin Import API
+  description: |
+    Import endpoint for processing extension JSON data (titleCatalog array + summary).
+    Accepts user library/wishlist data from the Audible extension and imports it into the platform's title catalog architecture.
+  version: 1.0.0
+
+servers:
+  - url: https://my-audible-lists.com
+    description: Production
+  - url: http://localhost:3000
+    description: Local development
+
+paths:
+  /api/admin/import:
+    post:
+      summary: Import library data from extension
+      description: |
+        Processes extension JSON output (titleCatalog + summary) and imports user library entries.
+        For each title in the catalog:
+        1. Checks if Title exists in database (by ASIN)
+        2. If not found, fetches metadata from Audnex API
+        3. Creates/updates LibraryEntry with user-specific data (rating, status, progress)
+        4. Records import operation in SyncHistory
+
+        Import uses upsert semantics - existing library entries are updated with new progress/ratings.
+      operationId: importLibrary
+      tags:
+        - Admin
+        - Import
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExtensionOutput'
+            examples:
+              fullLibrary:
+                summary: Complete library with mixed sources
+                value:
+                  titleCatalog:
+                    - asin: B09GHRGYRF
+                      title: Project Hail Mary
+                      userRating: 5
+                      status: Finished
+                      progress: 100
+                      source: LIBRARY
+                    - asin: B0FXBHJXPD
+                      title: The Anthropocene Reviewed
+                      userRating: 4
+                      status: In Progress
+                      progress: 63
+                      timeLeft: 15h 39m left
+                      source: LIBRARY
+                    - asin: B0FZWMD83N
+                      title: Wishlist Item Example
+                      userRating: 0
+                      status: Not Started
+                      progress: 0
+                      source: WISHLIST
+                  summary:
+                    libraryCount: 2
+                    wishlistCount: 1
+                    scrapeDurationMs: 12500
+                    scrapedAt: '2026-02-11T15:30:00Z'
+              emptyLibrary:
+                summary: Empty library (valid edge case)
+                value:
+                  titleCatalog: []
+                  summary:
+                    libraryCount: 0
+                    wishlistCount: 0
+                    scrapeDurationMs: 150
+                    scrapedAt: '2026-02-11T15:30:00Z'
+      responses:
+        '200':
+          description: Import completed successfully (full or partial success)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportResponse'
+              examples:
+                fullSuccess:
+                  summary: All titles imported successfully
+                  value:
+                    success: true
+                    summary:
+                      totalCount: 3
+                      successCount: 3
+                      failureCount: 0
+                      durationMs: 28500
+                      status: success
+                    errors: []
+                partialSuccess:
+                  summary: Some titles failed (e.g., Audnex API errors)
+                  value:
+                    success: true
+                    summary:
+                      totalCount: 50
+                      successCount: 47
+                      failureCount: 3
+                      durationMs: 12300
+                      status: partial
+                    errors:
+                      - asin: B0INVALID1
+                        title: Unknown Title
+                        error: Audnex API returned 404 Not Found
+                      - asin: B0INVALID2
+                        title: Network Timeout Example
+                        error: Network timeout after 3 retries
+                      - asin: B0INVALID3
+                        title: Invalid Format
+                        error: Invalid ASIN format
+        '400':
+          description: Bad request - invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidSchema:
+                  summary: Request body doesn't match extension output schema
+                  value:
+                    error: Bad Request
+                    message: Invalid request body - missing required field 'summary'
+                    details:
+                      field: summary
+                      constraint: required
+                invalidAsin:
+                  summary: ASIN doesn't match expected format
+                  value:
+                    error: Bad Request
+                    message: Invalid ASIN format
+                    details:
+                      field: titleCatalog[0].asin
+                      value: INVALID
+                      constraint: Must be 10 alphanumeric characters
+        '401':
+          description: Unauthorized - missing or invalid authentication
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notAuthenticated:
+                  summary: No authentication token provided
+                  value:
+                    error: Unauthorized
+                    message: Authentication required
+        '403':
+          description: Forbidden - user is not an admin
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                notAdmin:
+                  summary: User lacks admin privileges
+                  value:
+                    error: Forbidden
+                    message: Admin access required
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                databaseError:
+                  summary: Database connection failure
+                  value:
+                    error: Internal Server Error
+                    message: Database operation failed
+                    details:
+                      code: P2002
+                      meta:
+                        target: ['userId', 'titleAsin']
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token from NextAuth
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: next-auth.session-token
+      description: NextAuth session cookie
+
+  schemas:
+    ExtensionOutput:
+      type: object
+      description: Extension JSON output containing user library data
+      required:
+        - titleCatalog
+        - summary
+      properties:
+        titleCatalog:
+          type: array
+          description: Array of user library titles with user-specific metadata
+          items:
+            $ref: '#/components/schemas/UserLibraryTitle'
+        summary:
+          $ref: '#/components/schemas/ScrapeSummary'
+
+    UserLibraryTitle:
+      type: object
+      description: A single audiobook in user's library or wishlist with user-specific metadata
+      required:
+        - asin
+        - title
+        - userRating
+        - status
+        - progress
+        - source
+      properties:
+        asin:
+          type: string
+          description: Audible Standard Identification Number (product ID)
+          pattern: '^[A-Z0-9]{10}$'
+          minLength: 10
+          maxLength: 10
+          example: B09GHRGYRF
+        title:
+          type: string
+          description: Book title for error reporting and user visibility
+          minLength: 1
+          maxLength: 500
+          example: Project Hail Mary
+        userRating:
+          type: integer
+          description: Personal user rating (0-5 stars)
+          minimum: 0
+          maximum: 5
+          example: 5
+        status:
+          type: string
+          description: Listening progress status enum
+          enum:
+            - Finished
+            - Not Started
+            - In Progress
+          example: Finished
+        progress:
+          type: integer
+          description: Listening progress percentage (0-100)
+          minimum: 0
+          maximum: 100
+          example: 100
+        timeLeft:
+          type: string
+          description: Remaining listening time (only present for In Progress status)
+          pattern: '^\d+[dhms]( \d+[dhms])*\s+left$'
+          example: 15h 39m left
+        source:
+          type: string
+          description: Origin of the title (LIBRARY or WISHLIST)
+          enum:
+            - LIBRARY
+            - WISHLIST
+          example: LIBRARY
+
+    ScrapeSummary:
+      type: object
+      description: Scraping session metadata and counts
+      required:
+        - libraryCount
+        - wishlistCount
+        - scrapeDurationMs
+        - scrapedAt
+      properties:
+        libraryCount:
+          type: integer
+          description: Number of titles from user's library (source LIBRARY)
+          minimum: 0
+          example: 119
+        wishlistCount:
+          type: integer
+          description: Number of titles from user's wishlist (source WISHLIST)
+          minimum: 0
+          example: 24
+        scrapeDurationMs:
+          type: integer
+          description: Total scraping time in milliseconds
+          minimum: 0
+          example: 12500
+        scrapedAt:
+          type: string
+          format: date-time
+          description: ISO 8601 timestamp when scraping completed
+          example: '2026-02-11T15:30:00Z'
+
+    ImportResponse:
+      type: object
+      description: Import operation result with summary and errors
+      required:
+        - success
+        - summary
+        - errors
+      properties:
+        success:
+          type: boolean
+          description: Overall success flag (true for full or partial success)
+          example: true
+        summary:
+          $ref: '#/components/schemas/ImportSummary'
+        errors:
+          type: array
+          description: Array of errors for failed titles (empty if all succeeded)
+          items:
+            $ref: '#/components/schemas/ImportError'
+
+    ImportSummary:
+      type: object
+      description: Aggregated import statistics
+      required:
+        - totalCount
+        - successCount
+        - failureCount
+        - durationMs
+        - status
+      properties:
+        totalCount:
+          type: integer
+          description: Total number of titles in import payload
+          minimum: 0
+          example: 143
+        successCount:
+          type: integer
+          description: Number of titles successfully imported
+          minimum: 0
+          example: 143
+        failureCount:
+          type: integer
+          description: Number of titles that failed to import
+          minimum: 0
+          example: 0
+        durationMs:
+          type: integer
+          description: Total import processing time in milliseconds
+          minimum: 0
+          example: 28500
+        status:
+          type: string
+          description: Overall import status
+          enum:
+            - success
+            - partial
+            - failed
+          example: success
+
+    ImportError:
+      type: object
+      description: Error details for a failed title import
+      required:
+        - asin
+        - title
+        - error
+      properties:
+        asin:
+          type: string
+          description: ASIN of the failed title
+          example: B0INVALID1
+        title:
+          type: string
+          description: Title of the failed book
+          example: Unknown Title
+        error:
+          type: string
+          description: Human-readable error message
+          example: Audnex API returned 404 Not Found
+
+    ErrorResponse:
+      type: object
+      description: Standard error response
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          description: Error category
+          example: Bad Request
+        message:
+          type: string
+          description: Human-readable error message
+          example: Invalid request body
+        details:
+          type: object
+          description: Additional error context (optional)
+          additionalProperties: true

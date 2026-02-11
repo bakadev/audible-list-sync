@@ -20,11 +20,13 @@ model User {
   emailVerified DateTime?
   name          String?
   image         String?
+  isAdmin       Boolean   @default(false)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
   // Relations
   library          UserLibrary[]
+  libraryEntries   LibraryEntry[]
   syncTokens       SyncToken[]
   syncHistory      SyncHistory[]
   sessions         Session[]
@@ -36,6 +38,150 @@ model User {
 
   @@index([email])
 }
+
+// ============================================================================
+// Enhanced Title Catalog (Admin Feature 004)
+// ============================================================================
+
+model Title {
+  asin              String             @id
+  title             String
+  subtitle          String?
+  description       String?            @db.Text
+  summary           String?            @db.Text
+  image             String?
+  runtimeLengthMin  Int?
+  rating            String?
+  releaseDate       DateTime?
+  publisherName     String?
+  isbn              String?
+  language          String?
+  region            String?
+  formatType        String?
+  literatureType    String?
+  copyright         Int?
+  isAdult           Boolean            @default(false)
+  seriesAsin        String?
+  seriesPosition    String?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  // Relations
+  authors          AuthorOnTitle[]
+  narrators        NarratorOnTitle[]
+  genres           GenreOnTitle[]
+  series           Series?            @relation(fields: [seriesAsin], references: [asin])
+  libraryEntries   LibraryEntry[]
+
+  @@index([title])
+  @@index([seriesAsin])
+}
+
+model Author {
+  asin      String          @id
+  name      String
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  titles AuthorOnTitle[]
+
+  @@index([name])
+}
+
+model AuthorOnTitle {
+  authorAsin String
+  titleAsin  String
+
+  author Author @relation(fields: [authorAsin], references: [asin], onDelete: Cascade)
+  title  Title  @relation(fields: [titleAsin], references: [asin], onDelete: Cascade)
+
+  @@id([authorAsin, titleAsin])
+  @@index([titleAsin])
+}
+
+model Narrator {
+  id        String            @id @default(cuid())
+  name      String
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  titles NarratorOnTitle[]
+
+  @@unique([name])
+  @@index([name])
+}
+
+model NarratorOnTitle {
+  narratorId String
+  titleAsin  String
+
+  narrator Narrator @relation(fields: [narratorId], references: [id], onDelete: Cascade)
+  title    Title    @relation(fields: [titleAsin], references: [asin], onDelete: Cascade)
+
+  @@id([narratorId, titleAsin])
+  @@index([titleAsin])
+}
+
+model Genre {
+  asin      String         @id
+  name      String
+  type      String         // 'genre' or 'tag'
+  createdAt DateTime       @default(now())
+
+  titles GenreOnTitle[]
+
+  @@index([name])
+  @@index([type])
+}
+
+model GenreOnTitle {
+  genreAsin String
+  titleAsin String
+
+  genre Genre @relation(fields: [genreAsin], references: [asin], onDelete: Cascade)
+  title Title @relation(fields: [titleAsin], references: [asin], onDelete: Cascade)
+
+  @@id([genreAsin, titleAsin])
+  @@index([titleAsin])
+}
+
+model Series {
+  asin      String   @id
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  titles Title[]
+
+  @@index([name])
+}
+
+model LibraryEntry {
+  id         String   @id @default(cuid())
+  userId     String
+  titleAsin  String
+  userRating Int      @default(0)
+  status     String   // 'Finished', 'Not Started', 'In Progress'
+  progress   Int      @default(0)
+  timeLeft   String?
+  source     LibrarySource
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  // Relations
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title Title @relation(fields: [titleAsin], references: [asin], onDelete: Cascade)
+
+  @@unique([userId, titleAsin])
+  @@index([userId])
+  @@index([titleAsin])
+  @@index([status])
+  @@index([source])
+}
+
+// ============================================================================
+// Original Title Catalog (Legacy - kept for backward compatibility)
+// ============================================================================
 
 model TitleCatalog {
   id             String    @id @default(uuid())

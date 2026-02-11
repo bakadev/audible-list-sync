@@ -1,0 +1,810 @@
+openapi: 3.0.3
+info:
+  title: Admin Users API
+  description: |
+    User management endpoints for admin dashboard.
+    Provides ability to view all users, inspect user libraries, and drop user data.
+  version: 1.0.0
+
+servers:
+  - url: https://my-audible-lists.com
+    description: Production
+  - url: http://localhost:3000
+    description: Local development
+
+paths:
+  /api/admin/users:
+    get:
+      summary: List all users with library counts
+      description: |
+        Returns paginated list of all users with aggregated library statistics.
+        Useful for admin overview of platform usage and identifying inactive users.
+      operationId: listUsers
+      tags:
+        - Admin
+        - Users
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: page
+          in: query
+          description: Page number (1-indexed)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          description: Number of users per page
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: search
+          in: query
+          description: Search by email or name (case-insensitive)
+          required: false
+          schema:
+            type: string
+            example: user@example.com
+        - name: sortBy
+          in: query
+          description: Sort field
+          required: false
+          schema:
+            type: string
+            enum:
+              - email
+              - name
+              - libraryCount
+              - createdAt
+            default: createdAt
+        - name: sortOrder
+          in: query
+          description: Sort order
+          required: false
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: desc
+      responses:
+        '200':
+          description: List of users retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserListResponse'
+              examples:
+                multipleUsers:
+                  summary: Multiple users with varying library sizes
+                  value:
+                    users:
+                      - id: clx1a2b3c4d5e6f7g8h9i0j
+                        email: user@example.com
+                        name: Jane Doe
+                        image: https://example.com/avatar.jpg
+                        isAdmin: false
+                        libraryCount: 143
+                        wishlistCount: 24
+                        lastImportAt: '2026-02-11T10:00:00Z'
+                        createdAt: '2026-02-10T14:30:00Z'
+                      - id: clx9z8y7x6w5v4u3t2s1r0q
+                        email: admin@example.com
+                        name: Admin User
+                        image: null
+                        isAdmin: true
+                        libraryCount: 0
+                        wishlistCount: 0
+                        lastImportAt: null
+                        createdAt: '2026-01-15T09:00:00Z'
+                    pagination:
+                      total: 2
+                      page: 1
+                      limit: 50
+                      totalPages: 1
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/users/{userId}:
+    get:
+      summary: Get user details with full library
+      description: |
+        Returns detailed user information including full library with title metadata.
+        Includes all LibraryEntry records with joined Title, Author, Narrator, Genre, and Series data.
+      operationId: getUserDetails
+      tags:
+        - Admin
+        - Users
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: userId
+          in: path
+          description: User ID (cuid)
+          required: true
+          schema:
+            type: string
+            example: clx1a2b3c4d5e6f7g8h9i0j
+        - name: source
+          in: query
+          description: Filter library entries by source
+          required: false
+          schema:
+            type: string
+            enum:
+              - LIBRARY
+              - WISHLIST
+        - name: status
+          in: query
+          description: Filter library entries by status
+          required: false
+          schema:
+            type: string
+            enum:
+              - Finished
+              - Not Started
+              - In Progress
+      responses:
+        '200':
+          description: User details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserDetailsResponse'
+              examples:
+                userWithLibrary:
+                  summary: User with populated library
+                  value:
+                    user:
+                      id: clx1a2b3c4d5e6f7g8h9i0j
+                      email: user@example.com
+                      name: Jane Doe
+                      image: https://example.com/avatar.jpg
+                      isAdmin: false
+                      createdAt: '2026-02-10T14:30:00Z'
+                      updatedAt: '2026-02-10T14:30:00Z'
+                    library:
+                      - id: clxabc123def456ghi789jkl
+                        userRating: 5
+                        status: Finished
+                        progress: 100
+                        timeLeft: null
+                        source: LIBRARY
+                        createdAt: '2026-02-11T10:05:00Z'
+                        updatedAt: '2026-02-11T15:20:00Z'
+                        title:
+                          asin: B09GHRGYRF
+                          title: Project Hail Mary
+                          subtitle: null
+                          runtimeLengthMin: 970
+                          image: https://m.media-amazon.com/images/I/51D3O9hCVzL.jpg
+                          rating: 4.7 out of 5 stars
+                          releaseDate: '2021-05-04'
+                          authors:
+                            - asin: B000APZOQA
+                              name: Andy Weir
+                          narrators:
+                            - id: clxnar123abc456def789ghi
+                              name: Ray Porter
+                          genres:
+                            - asin: B00NRQP3XM
+                              name: Science Fiction
+                              type: genre
+                          series: null
+                    summary:
+                      totalCount: 1
+                      libraryCount: 1
+                      wishlistCount: 0
+                      finishedCount: 1
+                      inProgressCount: 0
+                      notStartedCount: 0
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                userNotFound:
+                  summary: No user exists with given ID
+                  value:
+                    error: Not Found
+                    message: User not found
+                    details:
+                      userId: clxINVALID123
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/users/{userId}/library:
+    delete:
+      summary: Drop user's entire library
+      description: |
+        Deletes all LibraryEntry records for a user (cascade delete).
+        Does not delete the User record itself or the Title records (other users may reference same titles).
+        Irreversible operation - use with caution.
+      operationId: dropUserLibrary
+      tags:
+        - Admin
+        - Users
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: userId
+          in: path
+          description: User ID (cuid)
+          required: true
+          schema:
+            type: string
+            example: clx1a2b3c4d5e6f7g8h9i0j
+        - name: confirm
+          in: query
+          description: Confirmation flag (must be 'true' to proceed)
+          required: true
+          schema:
+            type: string
+            enum:
+              - 'true'
+      responses:
+        '200':
+          description: Library dropped successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DropLibraryResponse'
+              examples:
+                libraryDropped:
+                  summary: Successfully dropped user library
+                  value:
+                    success: true
+                    message: Library dropped successfully
+                    deletedCount: 143
+                    userId: clx1a2b3c4d5e6f7g8h9i0j
+        '400':
+          description: Bad request - missing confirmation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingConfirmation:
+                  summary: Confirmation parameter not provided
+                  value:
+                    error: Bad Request
+                    message: Confirmation required to drop library
+                    details:
+                      hint: Add query parameter 'confirm=true' to proceed
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                userNotFound:
+                  summary: No user exists with given ID
+                  value:
+                    error: Not Found
+                    message: User not found
+                    details:
+                      userId: clxINVALID123
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token from NextAuth
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: next-auth.session-token
+      description: NextAuth session cookie
+
+  schemas:
+    UserListResponse:
+      type: object
+      description: Paginated list of users with library counts
+      required:
+        - users
+        - pagination
+      properties:
+        users:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserSummary'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+
+    UserSummary:
+      type: object
+      description: User overview with aggregated library statistics
+      required:
+        - id
+        - email
+        - isAdmin
+        - libraryCount
+        - wishlistCount
+        - createdAt
+      properties:
+        id:
+          type: string
+          description: User ID (cuid)
+          example: clx1a2b3c4d5e6f7g8h9i0j
+        email:
+          type: string
+          description: User email address
+          example: user@example.com
+        name:
+          type: string
+          nullable: true
+          description: User display name
+          example: Jane Doe
+        image:
+          type: string
+          nullable: true
+          description: User profile image URL
+          example: https://example.com/avatar.jpg
+        isAdmin:
+          type: boolean
+          description: Admin role flag
+          example: false
+        libraryCount:
+          type: integer
+          description: Number of LIBRARY source entries
+          minimum: 0
+          example: 143
+        wishlistCount:
+          type: integer
+          description: Number of WISHLIST source entries
+          minimum: 0
+          example: 24
+        lastImportAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: Timestamp of most recent import operation
+          example: '2026-02-11T10:00:00Z'
+        createdAt:
+          type: string
+          format: date-time
+          description: Account creation timestamp
+          example: '2026-02-10T14:30:00Z'
+
+    UserDetailsResponse:
+      type: object
+      description: Detailed user information with full library
+      required:
+        - user
+        - library
+        - summary
+      properties:
+        user:
+          $ref: '#/components/schemas/User'
+        library:
+          type: array
+          description: Full library with title metadata
+          items:
+            $ref: '#/components/schemas/LibraryEntryWithTitle'
+        summary:
+          $ref: '#/components/schemas/LibrarySummary'
+
+    User:
+      type: object
+      description: User entity
+      required:
+        - id
+        - email
+        - isAdmin
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          description: User ID (cuid)
+          example: clx1a2b3c4d5e6f7g8h9i0j
+        email:
+          type: string
+          description: User email address
+          example: user@example.com
+        name:
+          type: string
+          nullable: true
+          description: User display name
+          example: Jane Doe
+        image:
+          type: string
+          nullable: true
+          description: User profile image URL
+          example: https://example.com/avatar.jpg
+        isAdmin:
+          type: boolean
+          description: Admin role flag
+          example: false
+        createdAt:
+          type: string
+          format: date-time
+          description: Account creation timestamp
+          example: '2026-02-10T14:30:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+          example: '2026-02-10T14:30:00Z'
+
+    LibraryEntryWithTitle:
+      type: object
+      description: Library entry with full title metadata
+      required:
+        - id
+        - userRating
+        - status
+        - progress
+        - source
+        - createdAt
+        - updatedAt
+        - title
+      properties:
+        id:
+          type: string
+          description: Library entry ID (cuid)
+          example: clxabc123def456ghi789jkl
+        userRating:
+          type: integer
+          description: User's personal star rating (0-5)
+          minimum: 0
+          maximum: 5
+          example: 5
+        status:
+          type: string
+          description: Listening progress status
+          enum:
+            - Finished
+            - Not Started
+            - In Progress
+          example: Finished
+        progress:
+          type: integer
+          description: Listening progress percentage (0-100)
+          minimum: 0
+          maximum: 100
+          example: 100
+        timeLeft:
+          type: string
+          nullable: true
+          description: Remaining listening time
+          example: 15h 39m left
+        source:
+          type: string
+          description: Origin of the title
+          enum:
+            - LIBRARY
+            - WISHLIST
+          example: LIBRARY
+        createdAt:
+          type: string
+          format: date-time
+          description: Entry creation timestamp
+          example: '2026-02-11T10:05:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+          example: '2026-02-11T15:20:00Z'
+        title:
+          $ref: '#/components/schemas/TitleWithRelations'
+
+    TitleWithRelations:
+      type: object
+      description: Title with all related entities
+      required:
+        - asin
+        - title
+        - authors
+        - narrators
+        - genres
+      properties:
+        asin:
+          type: string
+          description: Audible Standard Identification Number
+          example: B09GHRGYRF
+        title:
+          type: string
+          description: Book title
+          example: Project Hail Mary
+        subtitle:
+          type: string
+          nullable: true
+          description: Book subtitle
+          example: null
+        runtimeLengthMin:
+          type: integer
+          nullable: true
+          description: Runtime in minutes
+          example: 970
+        image:
+          type: string
+          nullable: true
+          description: Cover image URL
+          example: https://m.media-amazon.com/images/I/51D3O9hCVzL.jpg
+        rating:
+          type: string
+          nullable: true
+          description: Aggregate Audible rating
+          example: 4.7 out of 5 stars
+        releaseDate:
+          type: string
+          nullable: true
+          description: Release date (YYYY-MM-DD)
+          example: '2021-05-04'
+        authors:
+          type: array
+          description: Book authors
+          items:
+            $ref: '#/components/schemas/Author'
+        narrators:
+          type: array
+          description: Audiobook narrators
+          items:
+            $ref: '#/components/schemas/Narrator'
+        genres:
+          type: array
+          description: Genres and tags
+          items:
+            $ref: '#/components/schemas/Genre'
+        series:
+          $ref: '#/components/schemas/Series'
+          nullable: true
+
+    Author:
+      type: object
+      description: Author entity
+      required:
+        - asin
+        - name
+      properties:
+        asin:
+          type: string
+          description: Author ASIN
+          example: B000APZOQA
+        name:
+          type: string
+          description: Author name
+          example: Andy Weir
+
+    Narrator:
+      type: object
+      description: Narrator entity
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+          description: Narrator ID (cuid)
+          example: clxnar123abc456def789ghi
+        name:
+          type: string
+          description: Narrator name
+          example: Ray Porter
+
+    Genre:
+      type: object
+      description: Genre or tag entity
+      required:
+        - asin
+        - name
+        - type
+      properties:
+        asin:
+          type: string
+          description: Genre ASIN
+          example: B00NRQP3XM
+        name:
+          type: string
+          description: Genre name
+          example: Science Fiction
+        type:
+          type: string
+          description: Category type
+          enum:
+            - genre
+            - tag
+          example: genre
+
+    Series:
+      type: object
+      description: Series entity
+      required:
+        - asin
+        - name
+      properties:
+        asin:
+          type: string
+          description: Series ASIN
+          example: B00K0OI42W
+        name:
+          type: string
+          description: Series name
+          example: The Kingkiller Chronicle
+
+    LibrarySummary:
+      type: object
+      description: Aggregated library statistics
+      required:
+        - totalCount
+        - libraryCount
+        - wishlistCount
+        - finishedCount
+        - inProgressCount
+        - notStartedCount
+      properties:
+        totalCount:
+          type: integer
+          description: Total number of library entries
+          minimum: 0
+          example: 143
+        libraryCount:
+          type: integer
+          description: Number of LIBRARY source entries
+          minimum: 0
+          example: 119
+        wishlistCount:
+          type: integer
+          description: Number of WISHLIST source entries
+          minimum: 0
+          example: 24
+        finishedCount:
+          type: integer
+          description: Number of Finished status entries
+          minimum: 0
+          example: 95
+        inProgressCount:
+          type: integer
+          description: Number of In Progress status entries
+          minimum: 0
+          example: 18
+        notStartedCount:
+          type: integer
+          description: Number of Not Started status entries
+          minimum: 0
+          example: 30
+
+    DropLibraryResponse:
+      type: object
+      description: Response after dropping user library
+      required:
+        - success
+        - message
+        - deletedCount
+        - userId
+      properties:
+        success:
+          type: boolean
+          description: Operation success flag
+          example: true
+        message:
+          type: string
+          description: Human-readable message
+          example: Library dropped successfully
+        deletedCount:
+          type: integer
+          description: Number of library entries deleted
+          minimum: 0
+          example: 143
+        userId:
+          type: string
+          description: User ID
+          example: clx1a2b3c4d5e6f7g8h9i0j
+
+    Pagination:
+      type: object
+      description: Pagination metadata
+      required:
+        - total
+        - page
+        - limit
+        - totalPages
+      properties:
+        total:
+          type: integer
+          description: Total number of records
+          minimum: 0
+          example: 100
+        page:
+          type: integer
+          description: Current page number (1-indexed)
+          minimum: 1
+          example: 1
+        limit:
+          type: integer
+          description: Number of records per page
+          minimum: 1
+          example: 50
+        totalPages:
+          type: integer
+          description: Total number of pages
+          minimum: 0
+          example: 2
+
+    ErrorResponse:
+      type: object
+      description: Standard error response
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          description: Error category
+          example: Bad Request
+        message:
+          type: string
+          description: Human-readable error message
+          example: Invalid request
+        details:
+          type: object
+          description: Additional error context
+          additionalProperties: true
+
+  responses:
+    Unauthorized:
+      description: Unauthorized - missing or invalid authentication
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            notAuthenticated:
+              summary: No authentication token provided
+              value:
+                error: Unauthorized
+                message: Authentication required
+
+    Forbidden:
+      description: Forbidden - user is not an admin
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            notAdmin:
+              summary: User lacks admin privileges
+              value:
+                error: Forbidden
+                message: Admin access required
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            databaseError:
+              summary: Database operation failed
+              value:
+                error: Internal Server Error
+                message: Database operation failed

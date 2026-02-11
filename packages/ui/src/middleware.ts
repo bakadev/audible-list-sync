@@ -4,6 +4,25 @@ import { NextResponse } from "next/server";
 export default auth((req) => {
   const isLoggedIn = !!req.auth;
   const { pathname } = req.nextUrl;
+  const user = req.auth?.user;
+
+  // Admin routes require admin role
+  if (pathname.startsWith("/admin")) {
+    // Redirect unauthenticated users to signin
+    if (!isLoggedIn) {
+      const signInUrl = new URL("/api/auth/signin", req.url);
+      signInUrl.searchParams.set("callbackUrl", pathname);
+      return NextResponse.redirect(signInUrl);
+    }
+
+    // Redirect non-admin users to library
+    if (!user?.isAdmin) {
+      return NextResponse.redirect(new URL("/library", req.url));
+    }
+
+    // Admin user - allow access
+    return NextResponse.next();
+  }
 
   // Protected routes that require authentication
   const protectedRoutes = ["/dashboard", "/library"];

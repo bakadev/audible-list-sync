@@ -1,0 +1,1016 @@
+openapi: 3.0.3
+info:
+  title: Admin Titles API
+  description: |
+    Title management endpoints for admin dashboard.
+    Provides ability to view, search, update, and refresh title metadata from Audnex API.
+    Includes destructive operations like dropping all titles (use with caution).
+  version: 1.0.0
+
+servers:
+  - url: https://my-audible-lists.com
+    description: Production
+  - url: http://localhost:3000
+    description: Local development
+
+paths:
+  /api/admin/titles:
+    get:
+      summary: List all titles (paginated, searchable)
+      description: |
+        Returns paginated list of titles with metadata and usage counts.
+        Supports search by title, author, narrator, and filtering by genre/series.
+      operationId: listTitles
+      tags:
+        - Admin
+        - Titles
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: page
+          in: query
+          description: Page number (1-indexed)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          description: Number of titles per page
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: search
+          in: query
+          description: Search by title, author, or narrator name (case-insensitive)
+          required: false
+          schema:
+            type: string
+            example: Project Hail Mary
+        - name: genre
+          in: query
+          description: Filter by genre ASIN
+          required: false
+          schema:
+            type: string
+            example: B00NRQP3XM
+        - name: series
+          in: query
+          description: Filter by series ASIN
+          required: false
+          schema:
+            type: string
+            example: B00K0OI42W
+        - name: sortBy
+          in: query
+          description: Sort field
+          required: false
+          schema:
+            type: string
+            enum:
+              - title
+              - releaseDate
+              - rating
+              - userCount
+              - createdAt
+            default: createdAt
+        - name: sortOrder
+          in: query
+          description: Sort order
+          required: false
+          schema:
+            type: string
+            enum:
+              - asc
+              - desc
+            default: desc
+      responses:
+        '200':
+          description: Titles retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TitleListResponse'
+              examples:
+                multipleTitles:
+                  summary: Multiple titles with varying metadata
+                  value:
+                    titles:
+                      - asin: B09GHRGYRF
+                        title: Project Hail Mary
+                        subtitle: null
+                        image: https://m.media-amazon.com/images/I/51D3O9hCVzL.jpg
+                        rating: 4.7 out of 5 stars
+                        releaseDate: '2021-05-04'
+                        runtimeLengthMin: 970
+                        authorNames:
+                          - Andy Weir
+                        narratorNames:
+                          - Ray Porter
+                        seriesName: null
+                        userCount: 47
+                        createdAt: '2026-02-11T10:00:00Z'
+                        updatedAt: '2026-02-11T10:00:00Z'
+                      - asin: B0FXBHJXPD
+                        title: The Name of the Wind
+                        subtitle: Kingkiller Chronicle, Book 1
+                        image: https://m.media-amazon.com/images/I/51vV0R5sDgL.jpg
+                        rating: 4.6 out of 5 stars
+                        releaseDate: '2008-04-01'
+                        runtimeLengthMin: 1038
+                        authorNames:
+                          - Patrick Rothfuss
+                        narratorNames:
+                          - Nick Podehl
+                        seriesName: The Kingkiller Chronicle
+                        userCount: 23
+                        createdAt: '2026-02-11T11:30:00Z'
+                        updatedAt: '2026-02-11T11:30:00Z'
+                    pagination:
+                      total: 2
+                      page: 1
+                      limit: 50
+                      totalPages: 1
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      summary: Drop all titles (destructive)
+      description: |
+        Deletes all Title records from the database.
+        Cascades to delete LibraryEntry, AuthorOnTitle, NarratorOnTitle, and Genre join records.
+        Does not delete User records.
+        Irreversible operation - use with extreme caution.
+      operationId: dropAllTitles
+      tags:
+        - Admin
+        - Titles
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: confirm
+          in: query
+          description: Confirmation flag (must be 'DELETE_ALL_TITLES' to proceed)
+          required: true
+          schema:
+            type: string
+            enum:
+              - DELETE_ALL_TITLES
+      responses:
+        '200':
+          description: All titles dropped successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DropTitlesResponse'
+              examples:
+                titlesDropped:
+                  summary: Successfully dropped all titles
+                  value:
+                    success: true
+                    message: All titles dropped successfully
+                    deletedCount: 1543
+        '400':
+          description: Bad request - missing or invalid confirmation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingConfirmation:
+                  summary: Confirmation parameter not provided
+                  value:
+                    error: Bad Request
+                    message: Confirmation required to drop all titles
+                    details:
+                      hint: Add query parameter 'confirm=DELETE_ALL_TITLES' to proceed
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/titles/{asin}:
+    get:
+      summary: Get title metadata
+      description: |
+        Returns detailed metadata for a specific title including all related entities.
+        Includes authors, narrators, genres, series, and usage statistics.
+      operationId: getTitleDetails
+      tags:
+        - Admin
+        - Titles
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: asin
+          in: path
+          description: Title ASIN
+          required: true
+          schema:
+            type: string
+            pattern: '^[A-Z0-9]{10}$'
+            example: B09GHRGYRF
+      responses:
+        '200':
+          description: Title retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TitleDetailsResponse'
+              examples:
+                completeTitle:
+                  summary: Title with all metadata populated
+                  value:
+                    title:
+                      asin: B09GHRGYRF
+                      title: Project Hail Mary
+                      subtitle: null
+                      description: '<p>Ryland Grace is the sole survivor on a desperate, last-chance mission...</p>'
+                      summary: A lone astronaut must save the earth from disaster in this incredible new science-based thriller.
+                      runtimeLengthMin: 970
+                      image: https://m.media-amazon.com/images/I/51D3O9hCVzL.jpg
+                      rating: 4.7 out of 5 stars
+                      releaseDate: '2021-05-04'
+                      publisherName: Audible Studios
+                      isbn: '9780593135204'
+                      language: en
+                      region: us
+                      seriesAsin: null
+                      seriesPosition: null
+                      createdAt: '2026-02-11T10:00:00Z'
+                      updatedAt: '2026-02-11T10:00:00Z'
+                      authors:
+                        - asin: B000APZOQA
+                          name: Andy Weir
+                      narrators:
+                        - id: clxnar123abc456def789ghi
+                          name: Ray Porter
+                      genres:
+                        - asin: B00NRQP3XM
+                          name: Science Fiction
+                          type: genre
+                        - asin: B07P8R3YXD
+                          name: Space Opera
+                          type: tag
+                      series: null
+                    usageStats:
+                      totalUsers: 47
+                      libraryCount: 39
+                      wishlistCount: 8
+                      averageRating: 4.6
+                      finishedCount: 32
+        '404':
+          description: Title not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                titleNotFound:
+                  summary: No title exists with given ASIN
+                  value:
+                    error: Not Found
+                    message: Title not found
+                    details:
+                      asin: B0INVALID1
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    put:
+      summary: Update title metadata
+      description: |
+        Updates editable metadata fields for a title.
+        Used to fix incorrect data or manually curate title information.
+        Does not update relations (authors, narrators, genres) - use separate endpoints for those.
+      operationId: updateTitle
+      tags:
+        - Admin
+        - Titles
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: asin
+          in: path
+          description: Title ASIN
+          required: true
+          schema:
+            type: string
+            pattern: '^[A-Z0-9]{10}$'
+            example: B09GHRGYRF
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTitleRequest'
+            examples:
+              updateTitleAndDescription:
+                summary: Update title and description
+                value:
+                  title: Project Hail Mary (Corrected Title)
+                  description: '<p>Updated description...</p>'
+              updateSeriesInfo:
+                summary: Update series information
+                value:
+                  seriesAsin: B00K0OI42W
+                  seriesPosition: Book 1
+      responses:
+        '200':
+          description: Title updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TitleDetailsResponse'
+        '400':
+          description: Bad request - invalid input data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidSeriesAsin:
+                  summary: Referenced series does not exist
+                  value:
+                    error: Bad Request
+                    message: Invalid seriesAsin - series not found
+                    details:
+                      seriesAsin: B0INVALID1
+        '404':
+          description: Title not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                titleNotFound:
+                  summary: No title exists with given ASIN
+                  value:
+                    error: Not Found
+                    message: Title not found
+                    details:
+                      asin: B0INVALID1
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/admin/titles/{asin}/refresh:
+    post:
+      summary: Refresh title metadata from Audnex API
+      description: |
+        Re-fetches title metadata from Audnex API and updates the database.
+        Useful for getting latest data (e.g., updated ratings, new reviews).
+        Preserves user-specific data in LibraryEntry records.
+      operationId: refreshTitle
+      tags:
+        - Admin
+        - Titles
+      security:
+        - bearerAuth: []
+        - cookieAuth: []
+      parameters:
+        - name: asin
+          in: path
+          description: Title ASIN
+          required: true
+          schema:
+            type: string
+            pattern: '^[A-Z0-9]{10}$'
+            example: B09GHRGYRF
+      responses:
+        '200':
+          description: Title refreshed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RefreshTitleResponse'
+              examples:
+                refreshSuccess:
+                  summary: Successfully refreshed from Audnex
+                  value:
+                    success: true
+                    message: Title refreshed successfully
+                    asin: B09GHRGYRF
+                    updatedFields:
+                      - rating
+                      - description
+                    updatedAt: '2026-02-11T16:30:00Z'
+        '404':
+          description: Title not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                titleNotFound:
+                  summary: No title exists with given ASIN
+                  value:
+                    error: Not Found
+                    message: Title not found
+                    details:
+                      asin: B0INVALID1
+        '502':
+          description: Bad Gateway - Audnex API error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                audnexError:
+                  summary: Audnex API returned error
+                  value:
+                    error: Bad Gateway
+                    message: Failed to fetch from Audnex API
+                    details:
+                      audnexStatus: 404
+                      audnexMessage: ASIN not found in Audnex database
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token from NextAuth
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: next-auth.session-token
+      description: NextAuth session cookie
+
+  schemas:
+    TitleListResponse:
+      type: object
+      description: Paginated list of titles
+      required:
+        - titles
+        - pagination
+      properties:
+        titles:
+          type: array
+          items:
+            $ref: '#/components/schemas/TitleSummary'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+
+    TitleSummary:
+      type: object
+      description: Title overview with usage statistics
+      required:
+        - asin
+        - title
+        - authorNames
+        - narratorNames
+        - userCount
+        - createdAt
+        - updatedAt
+      properties:
+        asin:
+          type: string
+          description: Audible Standard Identification Number
+          example: B09GHRGYRF
+        title:
+          type: string
+          description: Book title
+          example: Project Hail Mary
+        subtitle:
+          type: string
+          nullable: true
+          description: Book subtitle
+          example: null
+        image:
+          type: string
+          nullable: true
+          description: Cover image URL
+          example: https://m.media-amazon.com/images/I/51D3O9hCVzL.jpg
+        rating:
+          type: string
+          nullable: true
+          description: Aggregate Audible rating
+          example: 4.7 out of 5 stars
+        releaseDate:
+          type: string
+          nullable: true
+          description: Release date (YYYY-MM-DD)
+          example: '2021-05-04'
+        runtimeLengthMin:
+          type: integer
+          nullable: true
+          description: Runtime in minutes
+          example: 970
+        authorNames:
+          type: array
+          description: Author names (flattened for display)
+          items:
+            type: string
+          example:
+            - Andy Weir
+        narratorNames:
+          type: array
+          description: Narrator names (flattened for display)
+          items:
+            type: string
+          example:
+            - Ray Porter
+        seriesName:
+          type: string
+          nullable: true
+          description: Series name (if applicable)
+          example: null
+        userCount:
+          type: integer
+          description: Number of users who have this title
+          minimum: 0
+          example: 47
+        createdAt:
+          type: string
+          format: date-time
+          description: Title creation timestamp
+          example: '2026-02-11T10:00:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+          example: '2026-02-11T10:00:00Z'
+
+    TitleDetailsResponse:
+      type: object
+      description: Detailed title information with usage statistics
+      required:
+        - title
+        - usageStats
+      properties:
+        title:
+          $ref: '#/components/schemas/Title'
+        usageStats:
+          $ref: '#/components/schemas/TitleUsageStats'
+
+    Title:
+      type: object
+      description: Complete title entity with all relations
+      required:
+        - asin
+        - title
+        - authors
+        - narrators
+        - genres
+        - createdAt
+        - updatedAt
+      properties:
+        asin:
+          type: string
+          description: Audible Standard Identification Number
+          example: B09GHRGYRF
+        title:
+          type: string
+          description: Book title
+          example: Project Hail Mary
+        subtitle:
+          type: string
+          nullable: true
+          description: Book subtitle
+          example: null
+        description:
+          type: string
+          nullable: true
+          description: Long-form description (HTML)
+          example: '<p>Ryland Grace is the sole survivor...</p>'
+        summary:
+          type: string
+          nullable: true
+          description: Short summary/blurb
+          example: A lone astronaut must save the earth...
+        runtimeLengthMin:
+          type: integer
+          nullable: true
+          description: Runtime in minutes
+          example: 970
+        image:
+          type: string
+          nullable: true
+          description: Cover image URL
+          example: https://m.media-amazon.com/images/I/51D3O9hCVzL.jpg
+        rating:
+          type: string
+          nullable: true
+          description: Aggregate Audible rating
+          example: 4.7 out of 5 stars
+        releaseDate:
+          type: string
+          nullable: true
+          description: Release date (YYYY-MM-DD)
+          example: '2021-05-04'
+        publisherName:
+          type: string
+          nullable: true
+          description: Publisher name
+          example: Audible Studios
+        isbn:
+          type: string
+          nullable: true
+          description: ISBN identifier
+          example: '9780593135204'
+        language:
+          type: string
+          nullable: true
+          description: Language code
+          example: en
+        region:
+          type: string
+          nullable: true
+          description: Region code
+          example: us
+        seriesAsin:
+          type: string
+          nullable: true
+          description: Series ASIN (foreign key)
+          example: null
+        seriesPosition:
+          type: string
+          nullable: true
+          description: Position in series
+          example: null
+        createdAt:
+          type: string
+          format: date-time
+          description: Title creation timestamp
+          example: '2026-02-11T10:00:00Z'
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+          example: '2026-02-11T10:00:00Z'
+        authors:
+          type: array
+          description: Book authors
+          items:
+            $ref: '#/components/schemas/Author'
+        narrators:
+          type: array
+          description: Audiobook narrators
+          items:
+            $ref: '#/components/schemas/Narrator'
+        genres:
+          type: array
+          description: Genres and tags
+          items:
+            $ref: '#/components/schemas/Genre'
+        series:
+          $ref: '#/components/schemas/Series'
+          nullable: true
+
+    Author:
+      type: object
+      description: Author entity
+      required:
+        - asin
+        - name
+      properties:
+        asin:
+          type: string
+          description: Author ASIN
+          example: B000APZOQA
+        name:
+          type: string
+          description: Author name
+          example: Andy Weir
+
+    Narrator:
+      type: object
+      description: Narrator entity
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+          description: Narrator ID (cuid)
+          example: clxnar123abc456def789ghi
+        name:
+          type: string
+          description: Narrator name
+          example: Ray Porter
+
+    Genre:
+      type: object
+      description: Genre or tag entity
+      required:
+        - asin
+        - name
+        - type
+      properties:
+        asin:
+          type: string
+          description: Genre ASIN
+          example: B00NRQP3XM
+        name:
+          type: string
+          description: Genre name
+          example: Science Fiction
+        type:
+          type: string
+          description: Category type
+          enum:
+            - genre
+            - tag
+          example: genre
+
+    Series:
+      type: object
+      description: Series entity
+      required:
+        - asin
+        - name
+      properties:
+        asin:
+          type: string
+          description: Series ASIN
+          example: B00K0OI42W
+        name:
+          type: string
+          description: Series name
+          example: The Kingkiller Chronicle
+
+    TitleUsageStats:
+      type: object
+      description: Title usage statistics across users
+      required:
+        - totalUsers
+        - libraryCount
+        - wishlistCount
+        - averageRating
+        - finishedCount
+      properties:
+        totalUsers:
+          type: integer
+          description: Number of users who have this title
+          minimum: 0
+          example: 47
+        libraryCount:
+          type: integer
+          description: Number of users with title in LIBRARY
+          minimum: 0
+          example: 39
+        wishlistCount:
+          type: integer
+          description: Number of users with title in WISHLIST
+          minimum: 0
+          example: 8
+        averageRating:
+          type: number
+          format: float
+          nullable: true
+          description: Average user rating (0-5), null if no ratings
+          minimum: 0
+          maximum: 5
+          example: 4.6
+        finishedCount:
+          type: integer
+          description: Number of users who finished this title
+          minimum: 0
+          example: 32
+
+    UpdateTitleRequest:
+      type: object
+      description: Request to update title metadata
+      properties:
+        title:
+          type: string
+          description: Book title
+          minLength: 1
+          maxLength: 500
+        subtitle:
+          type: string
+          nullable: true
+          description: Book subtitle
+          maxLength: 500
+        description:
+          type: string
+          nullable: true
+          description: Long-form description (HTML)
+          maxLength: 10000
+        summary:
+          type: string
+          nullable: true
+          description: Short summary/blurb
+          maxLength: 2000
+        runtimeLengthMin:
+          type: integer
+          nullable: true
+          description: Runtime in minutes
+          minimum: 0
+        image:
+          type: string
+          nullable: true
+          description: Cover image URL
+          format: uri
+        rating:
+          type: string
+          nullable: true
+          description: Aggregate Audible rating
+        releaseDate:
+          type: string
+          nullable: true
+          description: Release date (YYYY-MM-DD)
+          pattern: '^\d{4}-\d{2}-\d{2}$'
+        publisherName:
+          type: string
+          nullable: true
+          description: Publisher name
+          maxLength: 255
+        isbn:
+          type: string
+          nullable: true
+          description: ISBN identifier
+        language:
+          type: string
+          nullable: true
+          description: Language code
+          pattern: '^[a-z]{2}$'
+        region:
+          type: string
+          nullable: true
+          description: Region code
+          pattern: '^[a-z]{2}$'
+        seriesAsin:
+          type: string
+          nullable: true
+          description: Series ASIN (must reference existing series)
+        seriesPosition:
+          type: string
+          nullable: true
+          description: Position in series
+
+    RefreshTitleResponse:
+      type: object
+      description: Response after refreshing title from Audnex
+      required:
+        - success
+        - message
+        - asin
+        - updatedFields
+        - updatedAt
+      properties:
+        success:
+          type: boolean
+          description: Operation success flag
+          example: true
+        message:
+          type: string
+          description: Human-readable message
+          example: Title refreshed successfully
+        asin:
+          type: string
+          description: Title ASIN
+          example: B09GHRGYRF
+        updatedFields:
+          type: array
+          description: List of fields that were updated
+          items:
+            type: string
+          example:
+            - rating
+            - description
+        updatedAt:
+          type: string
+          format: date-time
+          description: Timestamp of update
+          example: '2026-02-11T16:30:00Z'
+
+    DropTitlesResponse:
+      type: object
+      description: Response after dropping all titles
+      required:
+        - success
+        - message
+        - deletedCount
+      properties:
+        success:
+          type: boolean
+          description: Operation success flag
+          example: true
+        message:
+          type: string
+          description: Human-readable message
+          example: All titles dropped successfully
+        deletedCount:
+          type: integer
+          description: Number of titles deleted
+          minimum: 0
+          example: 1543
+
+    Pagination:
+      type: object
+      description: Pagination metadata
+      required:
+        - total
+        - page
+        - limit
+        - totalPages
+      properties:
+        total:
+          type: integer
+          description: Total number of records
+          minimum: 0
+          example: 1543
+        page:
+          type: integer
+          description: Current page number (1-indexed)
+          minimum: 1
+          example: 1
+        limit:
+          type: integer
+          description: Number of records per page
+          minimum: 1
+          example: 50
+        totalPages:
+          type: integer
+          description: Total number of pages
+          minimum: 0
+          example: 31
+
+    ErrorResponse:
+      type: object
+      description: Standard error response
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          description: Error category
+          example: Not Found
+        message:
+          type: string
+          description: Human-readable error message
+          example: Title not found
+        details:
+          type: object
+          description: Additional error context
+          additionalProperties: true
+
+  responses:
+    Unauthorized:
+      description: Unauthorized - missing or invalid authentication
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            notAuthenticated:
+              summary: No authentication token provided
+              value:
+                error: Unauthorized
+                message: Authentication required
+
+    Forbidden:
+      description: Forbidden - user is not an admin
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            notAdmin:
+              summary: User lacks admin privileges
+              value:
+                error: Forbidden
+                message: Admin access required
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            databaseError:
+              summary: Database operation failed
+              value:
+                error: Internal Server Error
+                message: Database operation failed
