@@ -4,7 +4,7 @@
  * Protected layout for admin-only pages
  * - Validates user authentication and admin role
  * - Redirects non-admin users to /library
- * - Provides admin navigation sidebar
+ * - Provides admin navigation tabs
  */
 
 import { redirect } from 'next/navigation'
@@ -12,6 +12,7 @@ import { auth } from '@/lib/auth'
 import { isAdmin } from '@/lib/admin-auth'
 import Link from 'next/link'
 import prisma from '@/lib/prisma'
+import { Button } from '@/components/ui/button'
 
 export default async function AdminLayout({
   children,
@@ -37,61 +38,35 @@ export default async function AdminLayout({
 
   // T056: Admin navigation component
   return (
-    <div className="flex h-screen bg-gray-100">
-      {/* Sidebar Navigation */}
-      <aside className="w-64 bg-white shadow-lg">
-        <div className="p-6">
-          <h1 className="text-2xl font-bold text-gray-800">Admin Dashboard</h1>
-          <p className="text-sm text-gray-600 mt-1">{user.email}</p>
+    <div className="container max-w-6xl py-8 md:py-12">
+      <div className="space-y-6">
+        {/* Admin Header */}
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-bold leading-tight md:text-3xl">Admin Dashboard</h1>
+            <p className="text-sm text-muted-foreground">{user.email}</p>
+          </div>
+          <Link href="/library">
+            <Button variant="outline" size="sm">Back to Library</Button>
+          </Link>
         </div>
 
-        <nav className="mt-6">
-          <Link
-            href="/admin"
-            className="block px-6 py-3 text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition"
-          >
-            <span className="flex items-center">
-              <span className="mr-3">📊</span>
-              Dashboard
-            </span>
+        {/* Admin Navigation Tabs */}
+        <nav className="flex gap-2 border-b pb-2">
+          <Link href="/admin">
+            <Button variant="ghost" size="sm">📊 Dashboard</Button>
           </Link>
-
-          <Link
-            href="/admin/users"
-            className="block px-6 py-3 text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition"
-          >
-            <span className="flex items-center">
-              <span className="mr-3">👥</span>
-              Users
-            </span>
+          <Link href="/admin/users">
+            <Button variant="ghost" size="sm">👥 Users</Button>
           </Link>
-
-          <Link
-            href="/admin/titles"
-            className="block px-6 py-3 text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition"
-          >
-            <span className="flex items-center">
-              <span className="mr-3">📚</span>
-              Titles
-            </span>
-          </Link>
-
-          <div className="border-t border-gray-200 my-4"></div>
-
-          <Link
-            href="/library"
-            className="block px-6 py-3 text-gray-700 hover:bg-gray-100 hover:text-gray-900 transition"
-          >
-            <span className="flex items-center">
-              <span className="mr-3">←</span>
-              Back to Library
-            </span>
+          <Link href="/admin/titles">
+            <Button variant="ghost" size="sm">📚 Titles</Button>
           </Link>
         </nav>
-      </aside>
 
-      {/* Main Content Area */}
-      <main className="flex-1 overflow-y-auto p-8">{children}</main>
+        {/* Page Content */}
+        {children}
+      </div>
     </div>
   )
 }

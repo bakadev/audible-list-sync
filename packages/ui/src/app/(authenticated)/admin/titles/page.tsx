@@ -8,6 +8,7 @@
 import { Suspense } from 'react'
 import TitlesTable from '@/components/admin/titles-table'
 import DropAllTitles from '@/components/admin/drop-all-titles'
+import { Card, CardContent } from '@/components/ui/card'
 
 export default async function AdminTitlesPage({
   searchParams,
@@ -15,35 +16,33 @@ export default async function AdminTitlesPage({
   searchParams: { [key: string]: string | string[] | undefined }
 }) {
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">Title Management</h1>
-        <p className="mt-2 text-sm text-gray-600">
+    <div className="space-y-6">
+      <div className="space-y-2">
+        <h2 className="text-2xl font-bold leading-tight md:text-3xl">Title Management</h2>
+        <p className="text-sm text-muted-foreground">
           View and manage audiobook title metadata
         </p>
       </div>
 
       <Suspense
         fallback={
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="animate-pulse">
-              <div className="h-10 bg-gray-200 rounded mb-4"></div>
-              <div className="space-y-3">
-                <div className="h-12 bg-gray-200 rounded"></div>
-                <div className="h-12 bg-gray-200 rounded"></div>
-                <div className="h-12 bg-gray-200 rounded"></div>
+          <Card>
+            <CardContent className="py-6">
+              <div className="animate-pulse space-y-3">
+                <div className="h-10 bg-muted rounded"></div>
+                <div className="h-12 bg-muted rounded"></div>
+                <div className="h-12 bg-muted rounded"></div>
+                <div className="h-12 bg-muted rounded"></div>
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         }
       >
         <TitlesTable searchParams={searchParams} />
       </Suspense>
 
       {/* T169: Drop All Titles Danger Zone */}
-      <div className="mt-6">
-        <DropAllTitles />
-      </div>
+      <DropAllTitles />
     </div>
   )
 }

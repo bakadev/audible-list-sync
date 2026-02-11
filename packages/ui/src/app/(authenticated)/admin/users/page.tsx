@@ -8,6 +8,7 @@
 
 import { Suspense } from 'react'
 import UsersTable from '@/components/admin/users-table'
+import { Card, CardContent } from '@/components/ui/card'
 
 export default async function AdminUsersPage({
   searchParams,
@@ -15,26 +16,26 @@ export default async function AdminUsersPage({
   searchParams: { [key: string]: string | string[] | undefined }
 }) {
   return (
-    <div>
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
-        <p className="mt-2 text-sm text-gray-600">
+    <div className="space-y-6">
+      <div className="space-y-2">
+        <h2 className="text-2xl font-bold leading-tight md:text-3xl">User Management</h2>
+        <p className="text-sm text-muted-foreground">
           View and manage user accounts and their libraries
         </p>
       </div>
 
       <Suspense
         fallback={
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="animate-pulse">
-              <div className="h-10 bg-gray-200 rounded mb-4"></div>
-              <div className="space-y-3">
-                <div className="h-12 bg-gray-200 rounded"></div>
-                <div className="h-12 bg-gray-200 rounded"></div>
-                <div className="h-12 bg-gray-200 rounded"></div>
+          <Card>
+            <CardContent className="py-6">
+              <div className="animate-pulse space-y-3">
+                <div className="h-10 bg-muted rounded"></div>
+                <div className="h-12 bg-muted rounded"></div>
+                <div className="h-12 bg-muted rounded"></div>
+                <div className="h-12 bg-muted rounded"></div>
               </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         }
       >
         <UsersTable searchParams={searchParams} />
