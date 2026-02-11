@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { TitleCard } from "./title-card";
+import { TitlePosterCard } from "./title-poster-card";
 import { SearchBar } from "./search-bar";
 import { EmptyState } from "./empty-state";
 import { LibrarySkeleton } from "./library-skeleton";
@@ -106,14 +106,13 @@ export function LibraryContent() {
           </div>
         </div>
       ) : (
-        <div className="grid gap-4">
+        <div className="grid grid-cols-3 gap-4 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
           {items.map((item) => (
-            <TitleCard
+            <TitlePosterCard
               key={item.id}
+              asin={item.title.asin}
               title={item.title.title}
-              subtitle={item.title.subtitle}
               authors={item.title.authors}
-              narrators={item.title.narrators}
               coverImageUrl={item.title.coverImageUrl}
               duration={item.title.duration}
               rating={item.title.rating}
