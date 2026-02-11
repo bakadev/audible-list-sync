@@ -46,10 +46,12 @@ const WishlistScraper = {
 
       if (pagingContainer) {
         const paginationText = pagingContainer.textContent.trim();
-        console.log(`[WishlistScraper] DEBUG - Pagination text:`, paginationText);
 
         // Parse "1-50 of 247 results" to get total count
         const match = paginationText.match(/of\s+(\d+)/i);
+        if (match) {
+          console.log(`[WishlistScraper] DEBUG - Found pagination: "${match[0]}"`);
+        }
         if (match) {
           const totalCount = parseInt(match[1]);
           totalPages = Math.ceil(totalCount / maxPageSize);
