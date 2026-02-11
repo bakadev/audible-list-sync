@@ -1,0 +1,303 @@
+openapi: 3.1.0
+info:
+  title: Library API
+  description: Endpoints for browsing and searching user's synced library
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:3000
+    description: Local development
+  - url: https://audible-lists.example.com
+    description: Production (placeholder)
+
+paths:
+  /api/library:
+    get:
+      summary: Get user's library
+      description: Returns user's synced library with optional search filtering. Supports filtering by title, author, narrator, or source (library/wishlist).
+      operationId: getLibrary
+      tags:
+        - Library
+      security:
+        - sessionCookie: []
+      parameters:
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+            maxLength: 200
+          description: Search query (matches title, authors, narrators)
+          example: "project hail mary"
+        - name: source
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [LIBRARY, WISHLIST]
+          description: Filter by source (library or wishlist)
+        - name: limit
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 1000
+            default: 100
+          description: Maximum number of results
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          description: Number of results to skip (for pagination)
+      responses:
+        '200':
+          description: Library data retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LibraryResponse'
+              example:
+                total: 245
+                items:
+                  - id: "550e8400-e29b-41d4-a716-446655440000"
+                    source: "LIBRARY"
+                    listeningProgress: 45
+                    personalRating: 5
+                    dateAdded: "2023-06-15T10:30:00.000Z"
+                    title:
+                      asin: "B08XYZABC1"
+                      title: "Project Hail Mary"
+                      subtitle: "A Novel"
+                      authors: ["Andy Weir"]
+                      narrators: ["Ray Porter"]
+                      seriesName: null
+                      seriesPosition: null
+                      duration: 963
+                      coverImageUrl: "https://m.media-amazon.com/images/I/..."
+                      rating: 4.8
+                      ratingCount: 125430
+                  - id: "660e8400-e29b-41d4-a716-446655440001"
+                    source: "WISHLIST"
+                    listeningProgress: 0
+                    personalRating: null
+                    dateAdded: "2025-12-01T08:15:00.000Z"
+                    title:
+                      asin: "B09ABCXYZ2"
+                      title: "The Way of Kings"
+                      subtitle: "Book One of the Stormlight Archive"
+                      authors: ["Brandon Sanderson"]
+                      narrators: ["Michael Kramer", "Kate Reading"]
+                      seriesName: "The Stormlight Archive"
+                      seriesPosition: 1
+                      duration: 2749
+                      coverImageUrl: "https://m.media-amazon.com/images/I/..."
+                      rating: 4.9
+                      ratingCount: 98234
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unauthorized"
+                message: "You must be logged in to access your library"
+
+  /api/library/stats:
+    get:
+      summary: Get library statistics
+      description: Returns aggregate stats for user's library (total counts, listening progress, etc.)
+      operationId: getLibraryStats
+      tags:
+        - Library
+      security:
+        - sessionCookie: []
+      responses:
+        '200':
+          description: Library stats retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LibraryStats'
+              example:
+                totalTitles: 245
+                libraryCount: 230
+                wishlistCount: 15
+                totalDuration: 156230
+                averageRating: 4.7
+                lastSyncedAt: "2026-02-11T14:30:00.000Z"
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: next-auth.session-token
+      description: NextAuth session cookie
+
+  schemas:
+    LibraryResponse:
+      type: object
+      required:
+        - total
+        - items
+      properties:
+        total:
+          type: integer
+          description: Total number of titles matching query (for pagination)
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/LibraryItem'
+
+    LibraryItem:
+      type: object
+      required:
+        - id
+        - source
+        - listeningProgress
+        - dateAdded
+        - title
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: UserLibrary entry ID
+        source:
+          type: string
+          enum: [LIBRARY, WISHLIST]
+          description: Where title exists in Audible
+        listeningProgress:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: Progress percentage
+        personalRating:
+          type: integer
+          minimum: 1
+          maximum: 5
+          nullable: true
+          description: User's personal rating (stars)
+        dateAdded:
+          type: string
+          format: date-time
+          description: When user acquired title in Audible
+        title:
+          $ref: '#/components/schemas/TitleSummary'
+
+    TitleSummary:
+      type: object
+      required:
+        - asin
+        - title
+        - authors
+        - narrators
+        - duration
+      properties:
+        asin:
+          type: string
+          description: Amazon Standard Identification Number
+        title:
+          type: string
+          description: Book title
+        subtitle:
+          type: string
+          nullable: true
+          description: Book subtitle
+        authors:
+          type: array
+          items:
+            type: string
+          description: Author names
+        narrators:
+          type: array
+          items:
+            type: string
+          description: Narrator names
+        seriesName:
+          type: string
+          nullable: true
+          description: Series name if part of series
+        seriesPosition:
+          type: number
+          nullable: true
+          description: Position in series
+        duration:
+          type: integer
+          nullable: true
+          description: Duration in minutes
+        coverImageUrl:
+          type: string
+          format: uri
+          nullable: true
+          description: URL to cover art
+        rating:
+          type: number
+          minimum: 0
+          maximum: 5
+          nullable: true
+          description: Audible aggregate rating
+        ratingCount:
+          type: integer
+          minimum: 0
+          nullable: true
+          description: Number of ratings
+
+    LibraryStats:
+      type: object
+      required:
+        - totalTitles
+        - libraryCount
+        - wishlistCount
+        - totalDuration
+      properties:
+        totalTitles:
+          type: integer
+          description: Total titles in library + wishlist
+        libraryCount:
+          type: integer
+          description: Titles in library
+        wishlistCount:
+          type: integer
+          description: Titles in wishlist
+        totalDuration:
+          type: integer
+          description: Total duration of all titles in minutes
+        averageRating:
+          type: number
+          minimum: 0
+          maximum: 5
+          nullable: true
+          description: Average personal rating across rated titles
+        lastSyncedAt:
+          type: string
+          format: date-time
+          nullable: true
+          description: Timestamp of most recent sync
+
+    Error:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          description: Error code or short description
+        message:
+          type: string
+          description: Human-readable error message
+
+tags:
+  - name: Library
+    description: Library browsing and search operations

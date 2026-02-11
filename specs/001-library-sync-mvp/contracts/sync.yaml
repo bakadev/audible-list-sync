@@ -1,0 +1,446 @@
+openapi: 3.1.0
+info:
+  title: Sync API
+  description: Extension connection and library import endpoints
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:3000
+    description: Local development
+  - url: https://audible-lists.example.com
+    description: Production (placeholder)
+
+paths:
+  /api/sync/token:
+    post:
+      summary: Generate sync token
+      description: Creates a short-lived JWT for extension to upload library data. Opens Audible tab with token in URL.
+      operationId: generateSyncToken
+      tags:
+        - Sync
+      security:
+        - sessionCookie: []
+      responses:
+        '200':
+          description: Token generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+              example:
+                token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                expiresAt: "2026-02-11T15:45:00.000Z"
+                audibleUrl: "https://www.audible.com/lib#token=eyJhbGci..."
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Unauthorized"
+                message: "You must be logged in to generate a sync token"
+
+  /api/sync/import:
+    post:
+      summary: Import library data
+      description: Accepts JSON payload from extension with Audible library data. Validates token, processes titles, updates database.
+      operationId: importLibrary
+      tags:
+        - Sync
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImportPayload'
+            example:
+              titles:
+                - asin: "B08XYZABC1"
+                  title: "Project Hail Mary"
+                  subtitle: "A Novel"
+                  authors: ["Andy Weir"]
+                  narrators: ["Ray Porter"]
+                  seriesName: null
+                  seriesPosition: null
+                  duration: 963
+                  coverImageUrl: "https://m.media-amazon.com/images/I/..."
+                  summary: "A lone astronaut must save Earth..."
+                  rating: 4.8
+                  ratingCount: 125430
+                  publisher: "Audible Studios"
+                  releaseDate: "2021-05-04T00:00:00.000Z"
+                  language: "en"
+                  categories: ["Science Fiction", "Hard SF"]
+                  source: "LIBRARY"
+                  listeningProgress: 45
+                  personalRating: 5
+                  dateAdded: "2023-06-15T10:30:00.000Z"
+                - asin: "B09ABCXYZ2"
+                  title: "The Way of Kings"
+                  subtitle: "Book One of the Stormlight Archive"
+                  authors: ["Brandon Sanderson"]
+                  narrators: ["Michael Kramer", "Kate Reading"]
+                  seriesName: "The Stormlight Archive"
+                  seriesPosition: 1
+                  duration: 2749
+                  coverImageUrl: "https://m.media-amazon.com/images/I/..."
+                  summary: "Epic fantasy masterpiece..."
+                  rating: 4.9
+                  ratingCount: 98234
+                  publisher: "Macmillan Audio"
+                  releaseDate: "2010-08-31T00:00:00.000Z"
+                  language: "en"
+                  categories: ["Fantasy", "Epic Fantasy"]
+                  source: "WISHLIST"
+                  listeningProgress: 0
+                  personalRating: null
+                  dateAdded: "2025-12-01T08:15:00.000Z"
+      responses:
+        '200':
+          description: Import successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportResponse'
+              example:
+                success: true
+                imported: 245
+                newToCatalog: 12
+                libraryCount: 230
+                wishlistCount: 15
+                warnings:
+                  - "3 titles missing cover art"
+        '400':
+          description: Invalid payload (missing required fields, invalid types, size exceeds 50MB)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Invalid payload"
+                message: "Title at index 5 missing required field 'asin'"
+        '401':
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              examples:
+                expired:
+                  value:
+                    error: "Token expired"
+                    message: "Sync token has expired. Please reconnect extension."
+                used:
+                  value:
+                    error: "Token already used"
+                    message: "This sync token has already been used. Generate a new token to sync again."
+                invalid:
+                  value:
+                    error: "Invalid token"
+                    message: "Sync token signature is invalid."
+        '413':
+          description: Payload too large (exceeds 50MB)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error: "Payload too large"
+                message: "Import payload exceeds 50MB limit"
+
+  /api/sync/history:
+    get:
+      summary: Get sync history
+      description: Returns user's recent sync events (last 5)
+      operationId: getSyncHistory
+      tags:
+        - Sync
+      security:
+        - sessionCookie: []
+      responses:
+        '200':
+          description: Sync history retrieved
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SyncEvent'
+              example:
+                - id: "abc-123"
+                  syncedAt: "2026-02-11T14:30:00.000Z"
+                  titlesImported: 245
+                  newToCatalog: 12
+                  libraryCount: 230
+                  wishlistCount: 15
+                  warnings: ["3 titles missing cover art"]
+                  success: true
+                  errorMessage: null
+                - id: "def-456"
+                  syncedAt: "2026-01-15T09:20:00.000Z"
+                  titlesImported: 233
+                  newToCatalog: 8
+                  libraryCount: 220
+                  wishlistCount: 13
+                  warnings: []
+                  success: true
+                  errorMessage: null
+        '401':
+          description: User not authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: next-auth.session-token
+      description: NextAuth session cookie
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Sync token JWT
+
+  schemas:
+    TokenResponse:
+      type: object
+      required:
+        - token
+        - expiresAt
+        - audibleUrl
+      properties:
+        token:
+          type: string
+          description: JWT sync token
+        expiresAt:
+          type: string
+          format: date-time
+          description: Token expiration timestamp (15 minutes from generation)
+        audibleUrl:
+          type: string
+          format: uri
+          description: Audible URL with token in fragment for extension to detect
+
+    ImportPayload:
+      type: object
+      required:
+        - titles
+      properties:
+        titles:
+          type: array
+          minItems: 1
+          maxItems: 10000
+          items:
+            $ref: '#/components/schemas/TitleData'
+
+    TitleData:
+      type: object
+      required:
+        - asin
+        - title
+        - authors
+        - source
+        - dateAdded
+      properties:
+        asin:
+          type: string
+          pattern: '^[A-Z0-9]{10}$'
+          description: Amazon Standard Identification Number (10 alphanumeric)
+          example: "B08XYZABC1"
+        title:
+          type: string
+          maxLength: 500
+          description: Book title
+        subtitle:
+          type: string
+          maxLength: 500
+          nullable: true
+          description: Book subtitle
+        authors:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            maxLength: 200
+          description: Author names
+        narrators:
+          type: array
+          items:
+            type: string
+            maxLength: 200
+          description: Narrator names
+        seriesName:
+          type: string
+          maxLength: 200
+          nullable: true
+          description: Series name if part of series
+        seriesPosition:
+          type: number
+          nullable: true
+          description: Position in series (e.g., 1.0, 2.5)
+        duration:
+          type: integer
+          minimum: 1
+          nullable: true
+          description: Duration in minutes
+        coverImageUrl:
+          type: string
+          format: uri
+          nullable: true
+          description: URL to cover art
+        summary:
+          type: string
+          nullable: true
+          description: Book description
+        rating:
+          type: number
+          minimum: 0
+          maximum: 5
+          nullable: true
+          description: Audible aggregate rating
+        ratingCount:
+          type: integer
+          minimum: 0
+          nullable: true
+          description: Number of ratings
+        publisher:
+          type: string
+          maxLength: 200
+          nullable: true
+          description: Publisher name
+        releaseDate:
+          type: string
+          format: date-time
+          nullable: true
+          description: Publication date
+        language:
+          type: string
+          minLength: 2
+          maxLength: 5
+          nullable: true
+          description: Language code (ISO 639-1/639-2)
+          example: "en"
+        categories:
+          type: array
+          items:
+            type: string
+            maxLength: 100
+          description: Genre/category tags
+        source:
+          type: string
+          enum: [LIBRARY, WISHLIST]
+          description: Where title exists in Audible account
+        listeningProgress:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: Progress percentage
+        personalRating:
+          type: integer
+          minimum: 1
+          maximum: 5
+          nullable: true
+          description: User's personal rating (stars)
+        dateAdded:
+          type: string
+          format: date-time
+          description: When user acquired title in Audible
+
+    ImportResponse:
+      type: object
+      required:
+        - success
+        - imported
+        - newToCatalog
+        - libraryCount
+        - wishlistCount
+        - warnings
+      properties:
+        success:
+          type: boolean
+          description: Whether import completed successfully
+        imported:
+          type: integer
+          description: Total titles imported
+        newToCatalog:
+          type: integer
+          description: New ASINs added to shared catalog
+        libraryCount:
+          type: integer
+          description: Titles in user's library
+        wishlistCount:
+          type: integer
+          description: Titles in user's wishlist
+        warnings:
+          type: array
+          items:
+            type: string
+          description: Warning messages (non-fatal issues)
+
+    SyncEvent:
+      type: object
+      required:
+        - id
+        - syncedAt
+        - titlesImported
+        - newToCatalog
+        - libraryCount
+        - wishlistCount
+        - warnings
+        - success
+      properties:
+        id:
+          type: string
+          description: Sync event ID
+        syncedAt:
+          type: string
+          format: date-time
+          description: Sync completion timestamp
+        titlesImported:
+          type: integer
+          description: Total titles in payload
+        newToCatalog:
+          type: integer
+          description: New ASINs added to catalog
+        libraryCount:
+          type: integer
+          description: Titles in library after sync
+        wishlistCount:
+          type: integer
+          description: Titles in wishlist after sync
+        warnings:
+          type: array
+          items:
+            type: string
+          description: Warning messages
+        success:
+          type: boolean
+          description: Whether sync completed successfully
+        errorMessage:
+          type: string
+          nullable: true
+          description: Error message if failed
+
+    Error:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          description: Error code or short description
+        message:
+          type: string
+          description: Human-readable error message
+
+tags:
+  - name: Sync
+    description: Extension connection and library import operations
