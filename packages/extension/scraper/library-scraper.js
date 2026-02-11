@@ -166,16 +166,22 @@ const LibraryScraper = {
         if (basicData) {
           // Extract user-specific metadata (simplified schema)
           const userRating = MetadataExtractor.extractUserRating(row);
-          const status = MetadataExtractor.extractListeningStatus(row, basicData.asin);
+          const listeningStatus = MetadataExtractor.extractListeningStatus(row, basicData.asin);
 
           // Build simplified title object with only user-specific fields
           const titleData = {
             asin: basicData.asin,
             title: basicData.title,
             userRating,
-            status,
+            status: listeningStatus.status,
+            progress: listeningStatus.progress,
             source: 'LIBRARY',
           };
+
+          // Add timeLeft only if it exists (In Progress titles)
+          if (listeningStatus.timeLeft) {
+            titleData.timeLeft = listeningStatus.timeLeft;
+          }
 
           titles.push(titleData);
         }

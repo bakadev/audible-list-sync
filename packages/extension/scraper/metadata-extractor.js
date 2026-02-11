@@ -493,7 +493,7 @@ const MetadataExtractor = {
    *
    * @param {Element} element - Library or wishlist row element
    * @param {string} asin - ASIN for ID-based element lookup
-   * @returns {string} Listening status: "Finished", "Not Started", or time with percentage (e.g., "15h 39m left (63% complete)")
+   * @returns {Object} Status object: { status: string, progress: number, timeLeft?: string }
    */
   extractListeningStatus(element, asin) {
     try {
@@ -502,7 +502,10 @@ const MetadataExtractor = {
       if (finishedElement && !finishedElement.classList.contains('bc-pub-hidden')) {
         const text = finishedElement.textContent.trim();
         if (text.includes('Finished')) {
-          return 'Finished';
+          return {
+            status: 'Finished',
+            progress: 100
+          };
         }
       }
 
@@ -514,25 +517,31 @@ const MetadataExtractor = {
           const text = timeText.textContent.trim();
           // Check if it contains time pattern (e.g., "15h 39m left", "2h 15m left")
           if (text.includes('left')) {
-            // Try to also extract progress percentage from progress bar
+            // Extract progress percentage from progress bar
             const progressBar = timeDisplayContainer.querySelector('[role="progressbar"]');
-            if (progressBar) {
-              const percentComplete = progressBar.getAttribute('aria-valuenow');
-              if (percentComplete) {
-                return `${text} (${percentComplete}% complete)`;
-              }
-            }
-            return text;
+            const percentComplete = progressBar ? parseInt(progressBar.getAttribute('aria-valuenow'), 10) : 0;
+
+            return {
+              status: 'In Progress',
+              progress: percentComplete || 0,
+              timeLeft: text
+            };
           }
         }
       }
 
       // Pattern 3: Default to "Not Started" if no status found
       // This is typical for wishlist items or library titles the user hasn't started
-      return 'Not Started';
+      return {
+        status: 'Not Started',
+        progress: 0
+      };
     } catch (error) {
       console.error('[MetadataExtractor] Error extracting listening status:', error);
-      return 'Not Started';
+      return {
+        status: 'Not Started',
+        progress: 0
+      };
     }
   },
 };

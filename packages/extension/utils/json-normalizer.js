@@ -71,18 +71,26 @@ const JSONNormalizer = {
   },
 
   /**
-   * Normalize a title to simplified 5-field schema
+   * Normalize a title to simplified schema
    * @param {Object} title - Title object
    * @returns {Object} Normalized title entry
    */
   normalizeTitleEntry(title) {
-    return {
+    const normalized = {
       asin: title.asin,
       title: title.title || 'Unknown Title',
       userRating: this.normalizeUserRating(title.userRating),
       status: title.status || 'Not Started',
+      progress: typeof title.progress === 'number' ? title.progress : 0,
       source: title.source || 'LIBRARY',
     };
+
+    // Add timeLeft only if it exists (In Progress titles)
+    if (title.timeLeft) {
+      normalized.timeLeft = title.timeLeft;
+    }
+
+    return normalized;
   },
 
   /**
@@ -119,15 +127,20 @@ const JSONNormalizer = {
    * @returns {boolean} True if valid status
    */
   isValidStatus(status) {
-    const validStatuses = ['Finished', 'Not Started'];
-    // Pattern: Any combination of time units (d/h/m/s) followed by "left" with optional percentage
-    // Examples: "39m left", "15h 39m left", "1d 5h left", "30s left (50% complete)"
-    const timePattern = /^\d+[dhms]( \d+[dhms])*\s+left( \(\d+% complete\))?$/;
+    const validStatuses = ['Finished', 'Not Started', 'In Progress'];
+    return typeof status === 'string' && validStatuses.includes(status);
+  },
 
-    return (
-      typeof status === 'string' &&
-      (validStatuses.includes(status) || timePattern.test(status))
-    );
+  /**
+   * Validate time left format
+   * @param {string} timeLeft - Time left string to validate
+   * @returns {boolean} True if valid time format
+   */
+  isValidTimeLeft(timeLeft) {
+    // Pattern: Any combination of time units (d/h/m/s) followed by "left"
+    // Examples: "39m left", "15h 39m left", "1d 5h left", "30s left"
+    const timePattern = /^\d+[dhms]( \d+[dhms])*\s+left$/;
+    return typeof timeLeft === 'string' && timePattern.test(timeLeft);
   },
 
   /**
@@ -163,8 +176,29 @@ const JSONNormalizer = {
       errors.push('Missing required field: status');
     } else if (!this.isValidStatus(entry.status)) {
       errors.push(
-        'Invalid status: must be "Finished", "Not Started", or time remaining (e.g., "39m left", "15h 39m left (63% complete)")'
+        'Invalid status: must be "Finished", "Not Started", or "In Progress"'
       );
+    }
+
+    if (entry.progress === undefined || entry.progress === null) {
+      errors.push('Missing required field: progress');
+    } else if (
+      !Number.isInteger(entry.progress) ||
+      entry.progress < 0 ||
+      entry.progress > 100
+    ) {
+      errors.push('Invalid progress: must be integer 0-100');
+    }
+
+    // Validate timeLeft if present (optional field for In Progress titles)
+    if (entry.timeLeft !== undefined && entry.timeLeft !== null) {
+      if (!this.isValidTimeLeft(entry.timeLeft)) {
+        errors.push('Invalid timeLeft: must match pattern "Xh Ym left"');
+      }
+      // timeLeft should only exist for In Progress titles
+      if (entry.status !== 'In Progress') {
+        errors.push('timeLeft should only be present for "In Progress" status');
+      }
     }
 
     if (!entry.source || !['LIBRARY', 'WISHLIST'].includes(entry.source)) {
