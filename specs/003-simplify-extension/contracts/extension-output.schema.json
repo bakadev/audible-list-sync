@@ -1,0 +1,141 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://my-audible-lists.com/schemas/extension-output-simplified.json",
+  "title": "Audible Library Extension Output (Simplified)",
+  "description": "JSON schema for simplified extension output containing user-specific library metadata only. Book details (authors, narrators, etc.) are fetched from external API using ASIN.",
+  "type": "object",
+  "required": ["titleCatalog", "summary"],
+  "properties": {
+    "titleCatalog": {
+      "type": "array",
+      "description": "Array of user library titles with user-specific metadata (rating, listening status)",
+      "minItems": 0,
+      "items": {
+        "$ref": "#/definitions/UserLibraryTitle"
+      }
+    },
+    "summary": {
+      "type": "object",
+      "description": "Scraping session metadata and counts",
+      "required": ["libraryCount", "wishlistCount", "scrapeDurationMs", "scrapedAt"],
+      "properties": {
+        "libraryCount": {
+          "type": "integer",
+          "description": "Number of titles from user's library (source: LIBRARY)",
+          "minimum": 0
+        },
+        "wishlistCount": {
+          "type": "integer",
+          "description": "Number of titles from user's wishlist (source: WISHLIST)",
+          "minimum": 0
+        },
+        "scrapeDurationMs": {
+          "type": "integer",
+          "description": "Total scraping time in milliseconds",
+          "minimum": 0
+        },
+        "scrapedAt": {
+          "type": "string",
+          "description": "ISO 8601 timestamp when scraping completed",
+          "format": "date-time",
+          "examples": ["2026-02-11T15:30:00Z", "2026-02-11T10:15:30.500Z"]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "UserLibraryTitle": {
+      "type": "object",
+      "description": "A single audiobook in user's library or wishlist with user-specific metadata",
+      "required": ["asin", "title", "userRating", "status", "progress", "source"],
+      "properties": {
+        "asin": {
+          "type": "string",
+          "description": "Audible Standard Identification Number (product ID)",
+          "pattern": "^[A-Z0-9]{10}$",
+          "minLength": 10,
+          "maxLength": 10,
+          "examples": ["B09GHRGYRF", "B0FXBHJXPD", "B0FZWMD83N"]
+        },
+        "title": {
+          "type": "string",
+          "description": "Book title for error reporting and user visibility",
+          "minLength": 1,
+          "maxLength": 500,
+          "examples": ["Project Hail Mary", "The Anthropocene Reviewed"]
+        },
+        "userRating": {
+          "type": "integer",
+          "description": "Personal user rating (0-5 stars), distinct from aggregate Audible rating",
+          "minimum": 0,
+          "maximum": 5,
+          "examples": [0, 3, 4, 5]
+        },
+        "status": {
+          "type": "string",
+          "description": "Listening progress status enum",
+          "enum": ["Finished", "Not Started", "In Progress"],
+          "examples": ["Finished", "Not Started", "In Progress"]
+        },
+        "progress": {
+          "type": "integer",
+          "description": "Listening progress percentage (0-100): 0 for Not Started, 1-99 for In Progress, 100 for Finished",
+          "minimum": 0,
+          "maximum": 100,
+          "examples": [0, 63, 100]
+        },
+        "timeLeft": {
+          "type": "string",
+          "description": "Remaining listening time (only present for In Progress status)",
+          "pattern": "^\\d+[dhms]( \\d+[dhms])*\\s+left$",
+          "examples": ["15h 39m left", "2h 15m left", "39m left", "30s left"]
+        },
+        "source": {
+          "type": "string",
+          "description": "Origin of the title: LIBRARY (owned) or WISHLIST (not yet purchased)",
+          "enum": ["LIBRARY", "WISHLIST"]
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "examples": [
+    {
+      "titleCatalog": [
+        {
+          "asin": "B09GHRGYRF",
+          "title": "Project Hail Mary",
+          "userRating": 5,
+          "status": "Finished",
+          "progress": 100,
+          "source": "LIBRARY"
+        },
+        {
+          "asin": "B0FXBHJXPD",
+          "title": "The Anthropocene Reviewed",
+          "userRating": 4,
+          "status": "In Progress",
+          "progress": 63,
+          "timeLeft": "15h 39m left",
+          "source": "LIBRARY"
+        },
+        {
+          "asin": "B0FZWMD83N",
+          "title": "Wishlist Item Example",
+          "userRating": 0,
+          "status": "Not Started",
+          "progress": 0,
+          "source": "WISHLIST"
+        }
+      ],
+      "summary": {
+        "libraryCount": 2,
+        "wishlistCount": 1,
+        "scrapeDurationMs": 12500,
+        "scrapedAt": "2026-02-11T15:30:00Z"
+      }
+    }
+  ]
+}
