@@ -1,15 +1,15 @@
 # Audible Library Extension
 
-A Chrome Manifest V3 extension for exporting your Audible library data with comprehensive metadata.
+A Chrome Manifest V3 extension for exporting your Audible library data with user-specific metadata (personal ratings and listening progress).
 
 ## Features
 
-- 📚 **Library Scraping**: Extract all titles from your Audible library with full metadata
+- 📚 **Library Scraping**: Extract user-specific data from your Audible library (ASIN, title, personal rating, listening status)
 - 🎯 **Wishlist Support**: Scrape your wishlist titles with proper source tagging
-- 🎛️ **Rate Limiting**: Configurable request throttling (1-20 req/sec, default 10/sec)
-- 💾 **JSON Export**: Download complete library data as structured JSON
-- 🔄 **Pause/Resume**: Interrupt and resume scraping sessions
-- ⚠️ **Error Handling**: Graceful handling of network failures, auth errors, and CAPTCHA
+- ⚡ **Fast Extraction**: Complete in <30 seconds for 100 titles (vs 10+ minutes with full metadata)
+- 💾 **JSON Export**: Download simplified library data as structured JSON
+- ⚠️ **Error Handling**: Retry/cancel buttons for network failures, auth errors, and CAPTCHA
+- 🎨 **Simple UI**: No configuration needed - just "Start Sync" and "Download JSON"
 
 ## Installation
 
@@ -42,29 +42,19 @@ A Chrome Manifest V3 extension for exporting your Audible library data with comp
 
 ## Output Format
 
-The extension generates a JSON file with:
+The extension generates a simplified JSON file with:
 
-- **syncedAt**: ISO 8601 timestamp
-- **summary**: Total counts and scraping duration
-- **titleCatalog**: Array of audiobook metadata (ASIN, title, authors, narrators, duration, ratings, etc.)
-- **userLibrary**: Array of user-specific entries (source, personal rating, listening progress)
+- **titleCatalog**: Array of user-specific audiobook data:
+  - `asin`: Audible product ID
+  - `title`: Book title (for error reporting)
+  - `userRating`: Personal star rating (0-5)
+  - `status`: Listening progress ("Finished", "Not Started", or "15h 39m left")
+  - `source`: Origin ("LIBRARY" or "WISHLIST")
+- **summary**: Library count, wishlist count, scrape duration, timestamp
 
-See `contracts/extension-output.schema.json` for the complete schema.
+Detailed book metadata (authors, narrators, duration, cover art, etc.) is fetched by the platform API using the ASIN.
 
-## Configuration
-
-### Rate Limiting
-
-Default: 10 requests/second
-
-Adjust in extension overlay settings (1-20 req/sec range)
-
-### Storage
-
-Extension uses `chrome.storage.local` for:
-- Scraping progress (enables pause/resume)
-- Sync session history
-- Configuration settings
+See `specs/003-simplify-extension/contracts/extension-output.schema.json` for the complete schema.
 
 ## Troubleshooting
 
@@ -99,18 +89,16 @@ Extension uses `chrome.storage.local` for:
 packages/extension/
 ├── manifest.json              # Manifest V3 configuration
 ├── content-script.js          # Main entry point
-├── overlay-ui.js              # React overlay component
+├── overlay-ui.js              # React overlay component (simplified UI)
 ├── scraper/
-│   ├── library-scraper.js     # Library page pagination
-│   ├── store-scraper.js       # Store page metadata
-│   ├── wishlist-scraper.js    # Wishlist scraping
-│   └── metadata-extractor.js  # JSON-LD parsing
+│   ├── library-scraper.js     # Library page scraping (user data)
+│   ├── wishlist-scraper.js    # Wishlist scraping (user data)
+│   └── metadata-extractor.js  # User rating and status extraction
 ├── utils/
-│   ├── rate-limiter.js        # Request throttling
+│   ├── rate-limiter.js        # Request throttling (library pages only)
 │   ├── retry-handler.js       # Exponential backoff
 │   ├── storage-manager.js     # chrome.storage wrapper
-│   ├── json-normalizer.js     # Data normalization
-│   └── token-detector.js      # JWT token detection
+│   └── json-normalizer.js     # Simplified JSON output
 ├── icons/                     # Extension icons
 └── styles/
     └── overlay.css            # Overlay styling
@@ -120,19 +108,19 @@ packages/extension/
 
 - **Language**: JavaScript ES6+ (no TypeScript, no build tools)
 - **UI Framework**: React 19 (loaded from CDN)
-- **Storage**: chrome.storage.local API
-- **Rate Limiting**: Promise queue with configurable delay
+- **Extraction Focus**: User-specific metadata only (rating, listening status)
 - **Retry Logic**: 3 attempts with exponential backoff (1s, 2s, 4s)
 
 ### Testing
 
-Manual testing guide: See `specs/002-audible-extension/quickstart.md`
+Manual testing guide: See `specs/003-simplify-extension/quickstart.md`
 
 Key test scenarios:
-- Small library (10-50 titles)
-- Large library with pagination (100+ titles)
-- Wishlist scraping
-- Rate limiting validation
+- Small library extraction (verify user rating and listening status)
+- Large library with pagination (100+ titles in <1 minute)
+- Wishlist scraping (verify source: "WISHLIST" flag)
+- User rating extraction (0-5 stars)
+- Listening status extraction (Finished, Not Started, time remaining)
 - Error handling (network failure, not logged in, CAPTCHA)
 
 ## Privacy & Ethics

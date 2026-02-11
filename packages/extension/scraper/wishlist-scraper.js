@@ -145,9 +145,9 @@ const WishlistScraper = {
   },
 
   /**
-   * Scrape basic metadata from all wishlist rows on a page
+   * Scrape user-specific metadata from all wishlist rows on a page
    * @param {Document} doc - HTML document
-   * @returns {Array<Object>} Array of basic title data
+   * @returns {Array<Object>} Array of simplified title data with user-specific fields
    */
   scrapeWishlistPage(doc) {
     const rows = this.extractWishlistRows(doc);
@@ -161,8 +161,21 @@ const WishlistScraper = {
           return;
         }
 
-        const titleData = MetadataExtractor.extractFromWishlistRow(row);
-        if (titleData) {
+        const basicData = MetadataExtractor.extractFromWishlistRow(row);
+        if (basicData) {
+          // Extract user-specific metadata (simplified schema)
+          const userRating = MetadataExtractor.extractUserRating(row);
+          const status = MetadataExtractor.extractListeningStatus(row, basicData.asin);
+
+          // Build simplified title object with only user-specific fields
+          const titleData = {
+            asin: basicData.asin,
+            title: basicData.title,
+            userRating,
+            status,
+            source: 'WISHLIST',
+          };
+
           titles.push(titleData);
         }
       } catch (error) {
@@ -178,26 +191,12 @@ const WishlistScraper = {
    * Scrape all wishlist pages with pagination
    * @param {Function} onProgress - Progress callback (current, total, titles)
    * @param {Function} onPageComplete - Page complete callback
-   * @param {boolean} currentPageOnly - If true, only scrape current page without pagination
    * @returns {Promise<Array<Object>>} Array of all wishlist titles
    */
-  async scrapeAllPages(onProgress = null, onPageComplete = null, currentPageOnly = false) {
+  async scrapeAllPages(onProgress = null, onPageComplete = null) {
     try {
-      let pagination;
-
-      if (currentPageOnly) {
-        // Skip pagination detection - just scrape current page
-        console.log('[WishlistScraper] Current page only mode - skipping pagination');
-        pagination = {
-          totalPages: 1,
-          pageSize: null,
-          pageUrls: [window.location.href],
-          firstPageDoc: document,
-        };
-      } else {
-        // Detect pagination
-        pagination = await this.detectPagination();
-      }
+      // Detect pagination
+      const pagination = await this.detectPagination();
 
       const allTitles = [];
 

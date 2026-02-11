@@ -1,51 +1,44 @@
 /**
- * JSON Normalizer - Convert scraped data to canonical format
+ * JSON Normalizer - Convert scraped data to simplified format
  *
- * Normalizes raw scraped data into the format defined in data-model.md:
- * - Title catalog (unique titles)
- * - User library (user-specific entries)
+ * Normalizes raw scraped data into the simplified format (user-specific data only):
+ * - Title catalog with 5 fields: asin, title, userRating, status, source
+ * - Summary with counts and metadata
  * - ASIN deduplication
- * - Type coercion
- * - Null handling
+ * - Type coercion and validation
  */
 
 const JSONNormalizer = {
   /**
-   * Normalize scraped data to canonical JSON format
+   * Normalize scraped data to simplified JSON format
    * @param {Object} scrapedData - Raw scraped data
    * @param {Array} scrapedData.titles - Array of title objects
    * @param {number} scrapedData.startTime - Scrape start timestamp
    * @param {Array} scrapedData.warnings - Array of warning messages
-   * @param {string} scrapedData.userId - User email (optional)
    * @returns {Object} Normalized JSON payload
    */
   normalize(scrapedData) {
-    const { titles, startTime, warnings = [], userId = null } = scrapedData;
+    const { titles, startTime, warnings = [] } = scrapedData;
 
-    // Deduplicate titles by ASIN
+    // Deduplicate titles by ASIN (library takes precedence over wishlist)
     const uniqueTitles = this.deduplicateTitles(titles);
 
-    // Separate into title catalog and user library
-    const titleCatalog = uniqueTitles.map((title) => this.normalizeTitleCatalogEntry(title));
-    const userLibrary = uniqueTitles.map((title) => this.normalizeUserLibraryEntry(title));
+    // Normalize each title to simplified 5-field schema
+    const titleCatalog = uniqueTitles.map((title) => this.normalizeTitleEntry(title));
 
     // Calculate summary statistics
-    const libraryCount = userLibrary.filter((entry) => entry.source === 'LIBRARY').length;
-    const wishlistCount = userLibrary.filter((entry) => entry.source === 'WISHLIST').length;
+    const libraryCount = titleCatalog.filter((entry) => entry.source === 'LIBRARY').length;
+    const wishlistCount = titleCatalog.filter((entry) => entry.source === 'WISHLIST').length;
 
     // Build final payload
     const payload = {
-      syncedAt: new Date().toISOString(),
-      ...(userId && { userId }), // Include userId only if present
+      titleCatalog,
       summary: {
-        totalTitles: titleCatalog.length,
         libraryCount,
         wishlistCount,
         scrapeDurationMs: Date.now() - startTime,
-        warnings: warnings.filter(Boolean), // Remove null/undefined
+        scrapedAt: new Date().toISOString(),
       },
-      titleCatalog,
-      userLibrary,
     };
 
     return payload;
@@ -78,93 +71,33 @@ const JSONNormalizer = {
   },
 
   /**
-   * Normalize a title for the titleCatalog array
+   * Normalize a title to simplified 5-field schema
    * @param {Object} title - Title object
-   * @returns {Object} Normalized title catalog entry
+   * @returns {Object} Normalized title entry
    */
-  normalizeTitleCatalogEntry(title) {
-    const catalogEntry = {
+  normalizeTitleEntry(title) {
+    return {
       asin: title.asin,
-      title: title.title,
-      ...(title.subtitle && { subtitle: title.subtitle }),
-      authors: title.authors || [],
-      narrators: title.narrators || [],
-      ...(title.series && { series: title.series }),
-      ...(title.duration && { duration: title.duration }),
-      ...(title.publisher && { publisher: title.publisher }),
-      ...(title.releaseDate && { releaseDate: title.releaseDate }),
-      ...(title.categories && title.categories.length > 0 && { categories: title.categories }),
-      ...(title.language && { language: title.language }),
-      ...(title.summary && { summary: title.summary }),
-      coverImageUrl: title.coverImageUrl || '',
-      ...(title.rating !== null &&
-        title.rating !== undefined && { rating: this.normalizeRating(title.rating) }),
-      ...(title.ratingCount !== null &&
-        title.ratingCount !== undefined && { ratingCount: title.ratingCount }),
-      ...(title.plusCatalog !== undefined && { plusCatalog: title.plusCatalog }),
-      ...(title.whispersync && { whispersync: title.whispersync }),
-      ...(title.storePageMissing !== undefined && { storePageMissing: title.storePageMissing }),
+      title: title.title || 'Unknown Title',
+      userRating: this.normalizeUserRating(title.userRating),
+      status: title.status || 'Not Started',
+      source: title.source || 'LIBRARY',
     };
-
-    return catalogEntry;
   },
 
   /**
-   * Normalize a title for the userLibrary array
-   * @param {Object} title - Title object
-   * @returns {Object} Normalized user library entry
+   * Normalize user rating to integer 0-5
+   * @param {number} rating - Rating value
+   * @returns {number} Normalized rating (0-5)
    */
-  normalizeUserLibraryEntry(title) {
-    const libraryEntry = {
-      asin: title.asin,
-      source: title.source || 'LIBRARY', // Default to LIBRARY if not specified
-      ...(title.personalRating !== null &&
-        title.personalRating !== undefined && { personalRating: title.personalRating }),
-      ...(title.listeningProgress !== null &&
-        title.listeningProgress !== undefined && {
-          listeningProgress: this.normalizeProgress(title.listeningProgress),
-        }),
-      ...(title.dateAdded && { dateAdded: title.dateAdded }),
-    };
+  normalizeUserRating(rating) {
+    if (rating === null || rating === undefined) return 0;
 
-    return libraryEntry;
-  },
-
-  /**
-   * Normalize rating to 1 decimal place
-   * @param {number|string} rating - Rating value
-   * @returns {number} Normalized rating (0-5, 1 decimal)
-   */
-  normalizeRating(rating) {
-    if (typeof rating === 'string') {
-      // Parse "4.5 out of 5 stars" format
-      const match = rating.match(/(\d+(?:\.\d+)?)/);
-      if (match) {
-        rating = parseFloat(match[1]);
-      }
-    }
-
-    const numRating = parseFloat(rating);
-    if (isNaN(numRating)) return null;
-
-    // Round to 1 decimal place
-    const rounded = Math.round(numRating * 10) / 10;
+    const numRating = parseInt(rating, 10);
+    if (isNaN(numRating)) return 0;
 
     // Clamp to 0-5 range
-    return Math.max(0, Math.min(5, rounded));
-  },
-
-  /**
-   * Normalize listening progress to integer percentage
-   * @param {number|string} progress - Progress value
-   * @returns {number} Progress percentage (0-100)
-   */
-  normalizeProgress(progress) {
-    const numProgress = parseInt(progress);
-    if (isNaN(numProgress)) return 0;
-
-    // Clamp to 0-100 range
-    return Math.max(0, Math.min(100, numProgress));
+    return Math.max(0, Math.min(5, numRating));
   },
 
   /**
@@ -181,11 +114,26 @@ const JSONNormalizer = {
   },
 
   /**
+   * Validate listening status format
+   * @param {string} status - Status to validate
+   * @returns {boolean} True if valid status
+   */
+  isValidStatus(status) {
+    const validStatuses = ['Finished', 'Not Started'];
+    const timePattern = /^\d+h \d+m left$/; // Pattern: "15h 39m left"
+
+    return (
+      typeof status === 'string' &&
+      (validStatuses.includes(status) || timePattern.test(status))
+    );
+  },
+
+  /**
    * Validate title catalog entry
    * @param {Object} entry - Title catalog entry
    * @returns {Object} Validation result {valid: boolean, errors: Array}
    */
-  validateTitleCatalogEntry(entry) {
+  validateTitleEntry(entry) {
     const errors = [];
 
     // Required fields
@@ -199,72 +147,26 @@ const JSONNormalizer = {
       errors.push('Missing required field: title');
     }
 
-    if (!entry.authors || !Array.isArray(entry.authors) || entry.authors.length === 0) {
-      errors.push('Missing required field: authors (must be non-empty array)');
-    }
-
-    if (!entry.narrators || !Array.isArray(entry.narrators) || entry.narrators.length === 0) {
-      errors.push('Missing required field: narrators (must be non-empty array)');
-    }
-
-    if (!entry.coverImageUrl) {
-      errors.push('Missing required field: coverImageUrl');
-    }
-
-    // Optional field validation
-    if (entry.duration !== undefined && (entry.duration < 1 || isNaN(entry.duration))) {
-      errors.push('Invalid duration: must be positive integer');
-    }
-
-    if (
-      entry.rating !== undefined &&
-      (entry.rating < 0 || entry.rating > 5 || isNaN(entry.rating))
+    if (entry.userRating === undefined || entry.userRating === null) {
+      errors.push('Missing required field: userRating');
+    } else if (
+      !Number.isInteger(entry.userRating) ||
+      entry.userRating < 0 ||
+      entry.userRating > 5
     ) {
-      errors.push('Invalid rating: must be between 0 and 5');
+      errors.push('Invalid userRating: must be integer 0-5');
     }
 
-    return {
-      valid: errors.length === 0,
-      errors,
-    };
-  },
-
-  /**
-   * Validate user library entry
-   * @param {Object} entry - User library entry
-   * @returns {Object} Validation result {valid: boolean, errors: Array}
-   */
-  validateUserLibraryEntry(entry) {
-    const errors = [];
-
-    // Required fields
-    if (!entry.asin) {
-      errors.push('Missing required field: asin');
-    } else if (!this.isValidAsin(entry.asin)) {
-      errors.push(`Invalid ASIN format: ${entry.asin}`);
+    if (!entry.status) {
+      errors.push('Missing required field: status');
+    } else if (!this.isValidStatus(entry.status)) {
+      errors.push(
+        'Invalid status: must be "Finished", "Not Started", or match pattern "Xh Ym left"'
+      );
     }
 
     if (!entry.source || !['LIBRARY', 'WISHLIST'].includes(entry.source)) {
       errors.push('Missing or invalid source: must be "LIBRARY" or "WISHLIST"');
-    }
-
-    // Optional field validation
-    if (
-      entry.personalRating !== undefined &&
-      (entry.personalRating < 0 ||
-        entry.personalRating > 5 ||
-        !Number.isInteger(entry.personalRating))
-    ) {
-      errors.push('Invalid personalRating: must be integer 0-5');
-    }
-
-    if (
-      entry.listeningProgress !== undefined &&
-      (entry.listeningProgress < 0 ||
-        entry.listeningProgress > 100 ||
-        !Number.isInteger(entry.listeningProgress))
-    ) {
-      errors.push('Invalid listeningProgress: must be integer 0-100');
     }
 
     return {
@@ -283,20 +185,25 @@ const JSONNormalizer = {
     const warnings = [];
 
     // Validate structure
-    if (!payload.syncedAt) {
-      errors.push('Missing syncedAt timestamp');
-    }
-
     if (!payload.summary) {
       errors.push('Missing summary object');
+    } else {
+      if (typeof payload.summary.libraryCount !== 'number') {
+        errors.push('Missing or invalid summary.libraryCount');
+      }
+      if (typeof payload.summary.wishlistCount !== 'number') {
+        errors.push('Missing or invalid summary.wishlistCount');
+      }
+      if (typeof payload.summary.scrapeDurationMs !== 'number') {
+        errors.push('Missing or invalid summary.scrapeDurationMs');
+      }
+      if (!payload.summary.scrapedAt) {
+        errors.push('Missing summary.scrapedAt timestamp');
+      }
     }
 
     if (!Array.isArray(payload.titleCatalog)) {
       errors.push('titleCatalog must be an array');
-    }
-
-    if (!Array.isArray(payload.userLibrary)) {
-      errors.push('userLibrary must be an array');
     }
 
     if (errors.length > 0) {
@@ -305,34 +212,40 @@ const JSONNormalizer = {
 
     // Validate each title catalog entry
     payload.titleCatalog.forEach((entry, index) => {
-      const result = this.validateTitleCatalogEntry(entry);
+      const result = this.validateTitleEntry(entry);
       if (!result.valid) {
         errors.push(`Title catalog entry ${index} (${entry.asin}): ${result.errors.join(', ')}`);
       }
     });
 
-    // Validate each user library entry
-    payload.userLibrary.forEach((entry, index) => {
-      const result = this.validateUserLibraryEntry(entry);
-      if (!result.valid) {
-        errors.push(`User library entry ${index} (${entry.asin}): ${result.errors.join(', ')}`);
-      }
-    });
+    // Check summary counts match actual data
+    const actualLibraryCount = payload.titleCatalog.filter(
+      (t) => t.source === 'LIBRARY'
+    ).length;
+    const actualWishlistCount = payload.titleCatalog.filter(
+      (t) => t.source === 'WISHLIST'
+    ).length;
 
-    // Check for ASIN mismatches
-    const catalogAsins = new Set(payload.titleCatalog.map((t) => t.asin));
-    payload.userLibrary.forEach((entry) => {
-      if (!catalogAsins.has(entry.asin)) {
-        warnings.push(`User library references ASIN not in catalog: ${entry.asin}`);
-      }
-    });
-
-    // Check summary counts
-    if (payload.summary.totalTitles !== payload.titleCatalog.length) {
+    if (payload.summary.libraryCount !== actualLibraryCount) {
       warnings.push(
-        `Summary totalTitles (${payload.summary.totalTitles}) doesn't match catalog length (${payload.titleCatalog.length})`
+        `Summary libraryCount (${payload.summary.libraryCount}) doesn't match actual count (${actualLibraryCount})`
       );
     }
+
+    if (payload.summary.wishlistCount !== actualWishlistCount) {
+      warnings.push(
+        `Summary wishlistCount (${payload.summary.wishlistCount}) doesn't match actual count (${actualWishlistCount})`
+      );
+    }
+
+    // Check for duplicate ASINs
+    const asinSet = new Set();
+    payload.titleCatalog.forEach((entry) => {
+      if (asinSet.has(entry.asin)) {
+        warnings.push(`Duplicate ASIN found: ${entry.asin}`);
+      }
+      asinSet.add(entry.asin);
+    });
 
     return {
       valid: errors.length === 0,

@@ -30,16 +30,11 @@ const OverlayUI = {
       wishlistCount: 0,
       duration: 0,
     },
-    settings: {
-      rateLimit: 10,
-      currentPageOnly: false,
-    },
   },
   callbacks: {
     onStartSync: null,
     onPauseSync: null,
     onDownload: null,
-    onSettingsChange: null,
     onRetry: null,
     onCancel: null,
   },
@@ -128,18 +123,6 @@ const OverlayUI = {
             </div>
           </div>
 
-          <!-- Settings -->
-          <div class="audible-ext-settings">
-            <label class="audible-ext-settings-label">Rate Limit (req/sec)</label>
-            <input type="range" min="1" max="20" value="10" class="audible-ext-slider rate-limit-slider">
-            <div class="audible-ext-slider-value rate-limit-value">10 requests/second</div>
-
-            <label class="audible-ext-checkbox-label">
-              <input type="checkbox" class="current-page-only-checkbox">
-              <span>Current Page Only (Testing)</span>
-            </label>
-          </div>
-
           <!-- Buttons -->
           <button class="audible-ext-button audible-ext-button-primary start-button">Start Sync</button>
           <button class="audible-ext-button audible-ext-button-success download-button" style="display: none;">Download JSON</button>
@@ -175,10 +158,6 @@ const OverlayUI = {
       stats: container.querySelector('.audible-ext-stats'),
       libraryCount: container.querySelector('.library-count'),
       wishlistCount: container.querySelector('.wishlist-count'),
-      settings: container.querySelector('.audible-ext-settings'),
-      rateLimitSlider: container.querySelector('.rate-limit-slider'),
-      rateLimitValue: container.querySelector('.rate-limit-value'),
-      currentPageOnlyCheckbox: container.querySelector('.current-page-only-checkbox'),
       startButton: container.querySelector('.start-button'),
       downloadButton: container.querySelector('.download-button'),
       errorActions: container.querySelector('.audible-ext-error-actions'),
@@ -209,27 +188,6 @@ const OverlayUI = {
     this.elements.downloadButton.addEventListener('click', () => {
       if (this.callbacks.onDownload) {
         this.callbacks.onDownload();
-      }
-    });
-
-    // Rate limit slider
-    this.elements.rateLimitSlider.addEventListener('input', (e) => {
-      const value = parseInt(e.target.value);
-      this.state.settings.rateLimit = value;
-      this.elements.rateLimitValue.textContent = `${value} requests/second`;
-
-      if (this.callbacks.onSettingsChange) {
-        this.callbacks.onSettingsChange({ rateLimit: value });
-      }
-    });
-
-    // Current page only checkbox
-    this.elements.currentPageOnlyCheckbox.addEventListener('change', (e) => {
-      const checked = e.target.checked;
-      this.state.settings.currentPageOnly = checked;
-
-      if (this.callbacks.onSettingsChange) {
-        this.callbacks.onSettingsChange({ currentPageOnly: checked });
       }
     });
 
@@ -369,13 +327,6 @@ const OverlayUI = {
       this.elements.wishlistCount.textContent = stats.wishlistCount;
     } else {
       this.elements.stats.style.display = 'none';
-    }
-
-    // Settings (only show when idle)
-    if (status === 'idle') {
-      this.elements.settings.style.display = 'block';
-    } else {
-      this.elements.settings.style.display = 'none';
     }
 
     // Buttons

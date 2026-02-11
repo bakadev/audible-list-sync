@@ -5,7 +5,6 @@
  * - Scraping progress (for pause/resume)
  * - Sync sessions
  * - JWT token storage
- * - Extension settings
  */
 
 const StorageManager = {
@@ -16,7 +15,6 @@ const StorageManager = {
     CURRENT_SESSION: 'current_session',
     SESSION_HISTORY: 'session_history',
     SYNC_TOKEN: 'sync_token',
-    SETTINGS: 'settings',
     SCRAPED_DATA: 'scraped_data',
   },
 
@@ -163,50 +161,6 @@ const StorageManager = {
     } catch (error) {
       console.error('[StorageManager] Failed to clear token:', error);
       throw error;
-    }
-  },
-
-  /**
-   * Save extension settings
-   * @param {Object} settings - Settings object
-   * @param {number} settings.rateLimit - Requests per second (1-20)
-   * @returns {Promise<void>}
-   */
-  async saveSettings(settings) {
-    try {
-      const current = await this.loadSettings();
-      await chrome.storage.local.set({
-        [this.KEYS.SETTINGS]: {
-          ...current,
-          ...settings,
-          updatedAt: Date.now(),
-        },
-      });
-    } catch (error) {
-      console.error('[StorageManager] Failed to save settings:', error);
-      throw error;
-    }
-  },
-
-  /**
-   * Load extension settings with defaults
-   * @returns {Promise<Object>} Settings object
-   */
-  async loadSettings() {
-    try {
-      const result = await chrome.storage.local.get(this.KEYS.SETTINGS);
-      return {
-        rateLimit: 10, // Default 10 req/sec
-        autoResume: true,
-        ...(result[this.KEYS.SETTINGS] || {}),
-      };
-    } catch (error) {
-      console.error('[StorageManager] Failed to load settings:', error);
-      // Return defaults on error
-      return {
-        rateLimit: 10,
-        autoResume: true,
-      };
     }
   },
 

@@ -439,13 +439,212 @@ const MetadataExtractor = {
         doc.querySelector('.a-box-inner.a-alert-container')?.textContent?.includes('Enter the characters')
     );
   },
+
+  /**
+   * Extract user's personal rating (0-5 stars) from library/wishlist row
+   *
+   * DOM Pattern: <div class="adbl-prod-rate-review-bar" data-star-count="4">
+   *
+   * @param {Element} element - Library or wishlist row element
+   * @returns {number} User rating (0-5), defaults to 0 if unrated
+   */
+  extractUserRating(element) {
+    try {
+      const ratingElement = element.querySelector('.adbl-prod-rate-review-bar');
+
+      if (!ratingElement) {
+        // No rating element found - user has not rated this title
+        return 0;
+      }
+
+      const starCount = ratingElement.getAttribute('data-star-count');
+
+      if (!starCount) {
+        // Element exists but no star count - treat as unrated
+        return 0;
+      }
+
+      const rating = parseInt(starCount, 10);
+
+      // Validate range (0-5)
+      if (isNaN(rating) || rating < 0 || rating > 5) {
+        console.warn('[MetadataExtractor] Invalid user rating value:', starCount);
+        return 0;
+      }
+
+      return rating;
+    } catch (error) {
+      console.error('[MetadataExtractor] Error extracting user rating:', error);
+      return 0;
+    }
+  },
+
+  /**
+   * Extract listening progress status from library/wishlist row
+   *
+   * DOM Patterns:
+   * 1. Finished: <span id="time-remaining-finished-{ASIN}">Finished</span>
+   * 2. In Progress: <span class="bc-text bc-color-secondary">15h 39m left</span> (inside #time-remaining-display-{ASIN})
+   * 3. Not Started: No status element found (default)
+   *
+   * @param {Element} element - Library or wishlist row element
+   * @param {string} asin - ASIN for ID-based element lookup
+   * @returns {string} Listening status: "Finished", "Not Started", or time remaining (e.g., "15h 39m left")
+   */
+  extractListeningStatus(element, asin) {
+    try {
+      // Pattern 1: Check for "Finished" status
+      const finishedElement = element.querySelector(`#time-remaining-finished-${asin}`);
+      if (finishedElement) {
+        const text = finishedElement.textContent.trim();
+        if (text.includes('Finished')) {
+          return 'Finished';
+        }
+      }
+
+      // Pattern 2: Check for in-progress status with time remaining
+      const timeDisplayContainer = element.querySelector(`#time-remaining-display-${asin}`);
+      if (timeDisplayContainer) {
+        const timeText = timeDisplayContainer.querySelector('.bc-text.bc-color-secondary');
+        if (timeText) {
+          const text = timeText.textContent.trim();
+          // Check if it contains time pattern (e.g., "15h 39m left", "2h 15m left")
+          if (text.includes('left')) {
+            return text;
+          }
+        }
+      }
+
+      // Pattern 3: Default to "Not Started" if no status found
+      // This is typical for wishlist items or library titles the user hasn't started
+      return 'Not Started';
+    } catch (error) {
+      console.error('[MetadataExtractor] Error extracting listening status:', error);
+      return 'Not Started';
+    }
+  },
+};
+
+/**
+ * Test helpers for validating extraction patterns
+ * Used for manual testing and edge case validation
+ */
+const MetadataExtractorTestHelpers = {
+  /**
+   * Validate user rating value
+   * @param {number} rating - Rating to validate
+   * @returns {Object} Validation result
+   */
+  validateUserRating(rating) {
+    const isValid =
+      typeof rating === 'number' &&
+      !isNaN(rating) &&
+      rating >= 0 &&
+      rating <= 5 &&
+      Number.isInteger(rating);
+
+    return {
+      valid: isValid,
+      value: rating,
+      error: isValid ? null : 'User rating must be an integer between 0 and 5',
+    };
+  },
+
+  /**
+   * Validate listening status value
+   * @param {string} status - Status to validate
+   * @returns {Object} Validation result
+   */
+  validateListeningStatus(status) {
+    const validStatuses = ['Finished', 'Not Started'];
+    const timePattern = /^\d+h \d+m left$/; // Pattern: "15h 39m left"
+
+    const isValid =
+      typeof status === 'string' &&
+      (validStatuses.includes(status) || timePattern.test(status));
+
+    return {
+      valid: isValid,
+      value: status,
+      error: isValid
+        ? null
+        : 'Listening status must be "Finished", "Not Started", or match pattern "Xh Ym left"',
+    };
+  },
+
+  /**
+   * Test extraction on sample HTML fragment
+   * @param {string} htmlString - HTML fragment to test
+   * @param {string} asin - ASIN for testing
+   * @returns {Object} Extraction test results
+   */
+  testExtraction(htmlString, asin) {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(htmlString, 'text/html');
+    const element = doc.body.firstElementChild;
+
+    const userRating = MetadataExtractor.extractUserRating(element);
+    const status = MetadataExtractor.extractListeningStatus(element, asin);
+
+    return {
+      userRating: {
+        value: userRating,
+        validation: this.validateUserRating(userRating),
+      },
+      status: {
+        value: status,
+        validation: this.validateListeningStatus(status),
+      },
+    };
+  },
+
+  /**
+   * Edge case test scenarios
+   * @returns {Array<Object>} Test cases
+   */
+  getEdgeCases() {
+    return [
+      {
+        name: 'Unrated book',
+        html: '<div><div class="adbl-prod-rate-review-bar" data-star-count="0"></div></div>',
+        asin: 'B000000000',
+        expected: { userRating: 0, status: 'Not Started' },
+      },
+      {
+        name: 'No rating element',
+        html: '<div><div class="other-element"></div></div>',
+        asin: 'B000000001',
+        expected: { userRating: 0, status: 'Not Started' },
+      },
+      {
+        name: 'Finished book',
+        html: '<div><span id="time-remaining-finished-B000000002">Finished</span></div>',
+        asin: 'B000000002',
+        expected: { userRating: 0, status: 'Finished' },
+      },
+      {
+        name: 'In-progress book',
+        html: '<div><div id="time-remaining-display-B000000003"><span class="bc-text bc-color-secondary">15h 39m left</span></div></div>',
+        asin: 'B000000003',
+        expected: { userRating: 0, status: '15h 39m left' },
+      },
+      {
+        name: 'Rated 5 stars, finished',
+        html: '<div><div class="adbl-prod-rate-review-bar" data-star-count="5"></div><span id="time-remaining-finished-B000000004">Finished</span></div>',
+        asin: 'B000000004',
+        expected: { userRating: 5, status: 'Finished' },
+      },
+    ];
+  },
 };
 
 // Export for browser (window) and Node.js (module.exports)
 if (typeof window !== 'undefined') {
   window.MetadataExtractor = MetadataExtractor;
+  window.MetadataExtractorTestHelpers = MetadataExtractorTestHelpers;
 }
 
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = MetadataExtractor;
+  module.exports.TestHelpers = MetadataExtractorTestHelpers;
 }

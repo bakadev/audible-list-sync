@@ -201,53 +201,6 @@
   background: #45a049;
 }
 
-/* Settings section */
-.audible-ext-settings {
-  margin-bottom: 16px;
-  padding: 12px;
-  background: #f9f9f9;
-  border-radius: 4px;
-}
-
-.audible-ext-settings-label {
-  display: block;
-  margin-bottom: 8px;
-  font-size: 12px;
-  color: #666;
-}
-
-.audible-ext-slider {
-  width: 100%;
-  margin-bottom: 4px;
-}
-
-.audible-ext-slider-value {
-  text-align: center;
-  font-size: 13px;
-  color: #333;
-}
-
-.audible-ext-checkbox-label {
-  display: flex;
-  align-items: center;
-  margin-top: 12px;
-  font-size: 13px;
-  color: #333;
-  cursor: pointer;
-  user-select: none;
-}
-
-.audible-ext-checkbox-label input[type="checkbox"] {
-  margin-right: 8px;
-  cursor: pointer;
-  width: 16px;
-  height: 16px;
-}
-
-.audible-ext-checkbox-label span {
-  flex: 1;
-}
-
 /* Warnings */
 .audible-ext-warnings {
   margin-top: 12px;

@@ -1,30 +1,19 @@
 /**
- * Rate Limiter - Promise queue with configurable throttling
+ * Rate Limiter - Promise queue with fixed throttling
  *
  * Throttles HTTP requests to Audible servers to prevent overload
- * Default: 10 requests/second
- * Configurable range: 1-20 requests/second
+ * Fixed rate: 10 requests/second
  */
 
 class RateLimiter {
-  constructor(requestsPerSecond = 10) {
-    this.requestsPerSecond = Math.max(1, Math.min(20, requestsPerSecond));
-    this.delayMs = 1000 / this.requestsPerSecond;
+  constructor() {
+    this.requestsPerSecond = 10;
+    this.delayMs = 100; // 1000ms / 10 req/sec
     this.queue = [];
     this.processing = false;
     this.lastRequestTime = 0;
     this.requestCount = 0;
     this.totalRequests = 0;
-  }
-
-  /**
-   * Update rate limit setting
-   * @param {number} requestsPerSecond - New rate (1-20 req/sec)
-   */
-  setRate(requestsPerSecond) {
-    this.requestsPerSecond = Math.max(1, Math.min(20, requestsPerSecond));
-    this.delayMs = 1000 / this.requestsPerSecond;
-    console.log(`[RateLimiter] Rate updated to ${this.requestsPerSecond} req/sec`);
   }
 
   /**

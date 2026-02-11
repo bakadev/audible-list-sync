@@ -52,7 +52,7 @@
   };
 
   // Create module instances
-  const rateLimiter = new RateLimiter(10); // Default 10 req/sec
+  const rateLimiter = new RateLimiter(); // Fixed 10 req/sec
   const retryHandler = new RetryHandler(3, 1000);
 
   // Initialize overlay UI
@@ -60,19 +60,9 @@
     onStartSync: handleStartSync,
     onPauseSync: handlePauseSync,
     onDownload: handleDownload,
-    onSettingsChange: handleSettingsChange,
     onRetry: handleRetry,
     onCancel: handleCancel,
   });
-
-  // Load saved settings
-  try {
-    const settings = await StorageManager.loadSettings();
-    OverlayUI.setState({ settings });
-    rateLimiter.setRate(settings.rateLimit || 10);
-  } catch (error) {
-    console.error('[AudibleExtension] Failed to load settings:', error);
-  }
 
   console.log('[AudibleExtension] Initialization complete');
 
@@ -113,13 +103,9 @@
     extensionState.warnings = [];
 
     try {
-      // Get current settings
-      const settings = await StorageManager.loadSettings();
-      const currentPageOnly = settings.currentPageOnly || false;
-
       // Phase 1: Scrape library pages for basic metadata
       OverlayUI.setScraping({
-        phase: currentPageOnly ? 'Scraping current page only...' : 'Detecting pagination...',
+        phase: 'Detecting pagination...',
         progress: 0,
         scrapedCount: 0,
         totalCount: 0,
@@ -132,7 +118,7 @@
           );
           OverlayUI.setScraping({
             phase: `Scraping library page ${currentPage} of ${totalPages}...`,
-            progress: (currentPage / totalPages) * 50, // 0-50% for library pages
+            progress: (currentPage / totalPages) * 70, // 0-70% for library pages
             scrapedCount: extensionState.scrapedTitles.length,
             totalCount: LibraryScraper.getTotalCount(),
           });
@@ -141,117 +127,83 @@
           // Save progress after each page
           extensionState.scrapedTitles.push(...pageTitles);
           await saveProgress();
-        },
-        currentPageOnly
+        }
       );
 
       console.log(
         `[AudibleExtension] Library scraping complete: ${libraryTitles.length} titles`
       );
 
-      // Phase 1.5: Scrape wishlist (if not in current page only mode)
+      // Phase 1.5: Scrape wishlist
       let wishlistTitles = [];
-      if (!currentPageOnly) {
-        try {
-          OverlayUI.setScraping({
-            phase: 'Fetching wishlist...',
-            progress: 33,
-            scrapedCount: 0,
-            totalCount: 0,
-          });
+      try {
+        OverlayUI.setScraping({
+          phase: 'Fetching wishlist...',
+          progress: 70,
+          scrapedCount: 0,
+          totalCount: 0,
+        });
 
-          // Fetch wishlist page
-          const wishlistUrl = 'https://www.audible.com/wl';
-          const wishlistResponse = await fetch(wishlistUrl);
+        // Fetch wishlist page
+        const wishlistUrl = 'https://www.audible.com/wl';
+        const wishlistResponse = await fetch(wishlistUrl);
 
-          if (wishlistResponse.ok) {
-            const wishlistHtml = await wishlistResponse.text();
-            const parser = new DOMParser();
-            const wishlistDoc = parser.parseFromString(wishlistHtml, 'text/html');
+        if (wishlistResponse.ok) {
+          const wishlistHtml = await wishlistResponse.text();
+          const parser = new DOMParser();
+          const wishlistDoc = parser.parseFromString(wishlistHtml, 'text/html');
 
-            // Check if wishlist is accessible (not empty or error page)
-            const wishlistContainer = wishlistDoc.querySelector('div.adbl-main');
-            if (wishlistContainer) {
-              console.log('[AudibleExtension] Wishlist accessible, starting scrape...');
+          // Check if wishlist is accessible (not empty or error page)
+          const wishlistContainer = wishlistDoc.querySelector('div.adbl-main');
+          if (wishlistContainer) {
+            console.log('[AudibleExtension] Wishlist accessible, starting scrape...');
 
-              wishlistTitles = await WishlistScraper.scrapeAllPages(
-                (currentPage, totalPages, pageTitles) => {
-                  console.log(
-                    `[AudibleExtension] Wishlist page ${currentPage}/${totalPages} complete`
-                  );
-                  OverlayUI.setScraping({
-                    phase: `Scraping wishlist page ${currentPage} of ${totalPages}...`,
-                    progress: 33 + (currentPage / totalPages) * 17, // 33-50% for wishlist pages
-                    scrapedCount: wishlistTitles.length,
-                    totalCount: WishlistScraper.getTotalCount(),
-                  });
-                },
-                async (pageNumber, pageTitles) => {
-                  // Save progress after each page
-                  await saveProgress();
-                },
-                false // currentPageOnly = false for wishlist
-              );
+            wishlistTitles = await WishlistScraper.scrapeAllPages(
+              (currentPage, totalPages, pageTitles) => {
+                console.log(
+                  `[AudibleExtension] Wishlist page ${currentPage}/${totalPages} complete`
+                );
+                OverlayUI.setScraping({
+                  phase: `Scraping wishlist page ${currentPage} of ${totalPages}...`,
+                  progress: 70 + (currentPage / totalPages) * 30, // 70-100% for wishlist pages
+                  scrapedCount: wishlistTitles.length,
+                  totalCount: WishlistScraper.getTotalCount(),
+                });
+              },
+              async (pageNumber, pageTitles) => {
+                // Save progress after each page
+                await saveProgress();
+              }
+            );
 
-              console.log(
-                `[AudibleExtension] Wishlist scraping complete: ${wishlistTitles.length} titles`
-              );
-            } else {
-              console.log('[AudibleExtension] Wishlist not accessible or empty');
-            }
-          } else if (wishlistResponse.status === 404 || wishlistResponse.status === 403) {
-            console.log('[AudibleExtension] Wishlist not available (404/403)');
+            console.log(
+              `[AudibleExtension] Wishlist scraping complete: ${wishlistTitles.length} titles`
+            );
+          } else {
+            console.log('[AudibleExtension] Wishlist not accessible or empty');
           }
-        } catch (error) {
-          console.warn('[AudibleExtension] Wishlist scraping failed (non-fatal):', error);
-          // Continue with library-only scraping
+        } else if (wishlistResponse.status === 404 || wishlistResponse.status === 403) {
+          console.log('[AudibleExtension] Wishlist not available (404/403)');
         }
-      } else {
-        console.log('[AudibleExtension] Skipping wishlist in current page only mode');
+      } catch (error) {
+        console.warn('[AudibleExtension] Wishlist scraping failed (non-fatal):', error);
+        // Continue with library-only scraping
       }
 
-      // Phase 2: Enrich with store page details
+      // Combine library and wishlist titles (no store page enrichment needed)
       const allTitles = [...libraryTitles, ...wishlistTitles];
-      const totalTitles = allTitles.length;
-      let enrichedCount = 0;
-
-      OverlayUI.setScraping({
-        phase: `Fetching detailed metadata for ${totalTitles} titles...`,
-        progress: 50,
-        scrapedCount: 0,
-        totalCount: totalTitles,
-      });
-
-      const enrichmentResult = await StoreScraper.scrapeStorePages(
-        allTitles,
-        rateLimiter,
-        retryHandler,
-        (current, total, enrichedTitle) => {
-          enrichedCount = current;
-          const progress = 50 + (current / total) * 50; // 50-100% for store pages
-
-          OverlayUI.setScraping({
-            phase: `Enriching metadata: ${current} of ${total} titles...`,
-            progress,
-            scrapedCount: current,
-            totalCount: total,
-          });
-        }
-      );
-
-      extensionState.scrapedTitles = enrichmentResult.titles;
-      extensionState.warnings = enrichmentResult.warnings;
+      extensionState.scrapedTitles = allTitles;
 
       console.log(
-        `[AudibleExtension] Store scraping complete: ${enrichmentResult.titles.length} titles enriched`
+        `[AudibleExtension] Scraping complete: ${allTitles.length} titles (${libraryTitles.length} library, ${wishlistTitles.length} wishlist)`
       );
 
-      // Phase 3: Normalize to JSON format
+      // Normalize to JSON format
       OverlayUI.setScraping({
         phase: 'Normalizing data...',
         progress: 100,
-        scrapedCount: enrichmentResult.titles.length,
-        totalCount: enrichmentResult.titles.length,
+        scrapedCount: allTitles.length,
+        totalCount: allTitles.length,
       });
 
       const normalizedData = JSONNormalizer.normalize({
@@ -345,30 +297,6 @@
     } catch (error) {
       console.error('[AudibleExtension] Download failed:', error);
       OverlayUI.setError('Failed to download JSON: ' + error.message);
-    }
-  }
-
-  /**
-   * Handle settings change
-   */
-  async function handleSettingsChange(settings) {
-    console.log('[AudibleExtension] Settings changed:', settings);
-
-    try {
-      // Merge with existing settings
-      const currentSettings = await StorageManager.loadSettings();
-      const updatedSettings = { ...currentSettings, ...settings };
-      await StorageManager.saveSettings(updatedSettings);
-
-      // Update UI state
-      OverlayUI.setState({ settings: updatedSettings });
-
-      // Update rate limiter
-      if (settings.rateLimit) {
-        rateLimiter.setRate(settings.rateLimit);
-      }
-    } catch (error) {
-      console.error('[AudibleExtension] Failed to save settings:', error);
     }
   }
 
