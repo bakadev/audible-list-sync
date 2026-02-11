@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { AppHeader } from "@/components/shared/app-header";
 
-export default async function DashboardLayout({
+export default async function AuthenticatedLayout({
   children,
 }: {
   children: React.ReactNode;
