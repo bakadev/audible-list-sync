@@ -1,4 +1,8 @@
 import { auth } from "@/lib/auth";
+import prisma from "@/lib/prisma";
+import { SyncStatus } from "@/components/dashboard/sync-status";
+import { ConnectExtensionButton } from "@/components/dashboard/connect-extension-button";
+import { Card } from "@/components/ui/card";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -6,6 +10,33 @@ export default async function DashboardPage() {
   if (!session?.user) {
     return null; // Middleware will redirect
   }
+
+  const userId = session.user.id;
+
+  // Fetch sync history and library stats
+  const [lastSync, libraryStats] = await Promise.all([
+    prisma.syncHistory.findFirst({
+      where: { userId },
+      orderBy: { syncedAt: 'desc' },
+    }),
+    prisma.userLibrary.aggregate({
+      where: { userId },
+      _count: { id: true },
+    }),
+  ]);
+
+  // Get library and wishlist counts
+  const [libraryCount, wishlistCount] = await Promise.all([
+    prisma.userLibrary.count({
+      where: { userId, source: 'LIBRARY' },
+    }),
+    prisma.userLibrary.count({
+      where: { userId, source: 'WISHLIST' },
+    }),
+  ]);
+
+  const totalItems = libraryStats._count.id;
+  const hasSyncedBefore = !!lastSync;
 
   return (
     <div className="container py-10">
@@ -19,35 +50,47 @@ export default async function DashboardPage() {
           </p>
         </div>
 
-        <div className="rounded-lg border bg-card p-8 text-center">
-          <div className="mx-auto max-w-md space-y-4">
-            <div className="flex h-16 w-16 mx-auto items-center justify-center rounded-full bg-muted">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={1.5}
-                stroke="currentColor"
-                className="h-8 w-8"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"
-                />
-              </svg>
-            </div>
-            <h2 className="text-2xl font-semibold">No Library Data Yet</h2>
-            <p className="text-muted-foreground">
-              Connect your Audible account to start syncing your library.
-            </p>
-            <div className="pt-4">
+        <div className="grid gap-6 md:grid-cols-2">
+          <SyncStatus
+            lastSyncedAt={lastSync?.syncedAt?.toISOString() || null}
+            totalItems={totalItems}
+            libraryCount={libraryCount}
+            wishlistCount={wishlistCount}
+          />
+
+          <Card className="p-6">
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">
+                {hasSyncedBefore ? "Update Your Library" : "Connect Extension"}
+              </h3>
               <p className="text-sm text-muted-foreground">
-                Sync functionality coming soon...
+                {hasSyncedBefore
+                  ? "Sync your latest Audible library changes."
+                  : "Connect the browser extension to sync your Audible library for the first time."}
+              </p>
+              <ConnectExtensionButton hasSyncedBefore={hasSyncedBefore} />
+            </div>
+          </Card>
+        </div>
+
+        {!hasSyncedBefore && (
+          <Card className="p-6 bg-muted/50">
+            <div className="space-y-3">
+              <h3 className="text-lg font-semibold">How to Connect</h3>
+              <ol className="space-y-2 text-sm text-muted-foreground list-decimal list-inside">
+                <li>Click the "Connect Extension" button above</li>
+                <li>A new tab will open to Audible with a secure sync token</li>
+                <li>The browser extension will automatically detect and use the token</li>
+                <li>Your library will be synced in the background</li>
+                <li>Return here to view your synced titles</li>
+              </ol>
+              <p className="text-xs text-muted-foreground pt-2">
+                Note: The browser extension is not yet available. This is the
+                website-side implementation only.
               </p>
             </div>
-          </div>
-        </div>
+          </Card>
+        )}
       </div>
     </div>
   );

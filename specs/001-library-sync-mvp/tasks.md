@@ -73,11 +73,11 @@
 
 ### Implementation for User Story 2
 
-- [ ] T025 [US2] Create POST /api/sync/token route in packages/ui/src/app/api/sync/token/route.ts that generates JWT, creates SyncToken record, returns token + Audible URL
-- [ ] T026 [P] [US2] Create SyncStatus component in packages/ui/src/components/dashboard/sync-status.tsx displaying connection state, last sync time, item counts
-- [ ] T027 [P] [US2] Create ConnectExtensionButton component in packages/ui/src/components/dashboard/connect-extension-button.tsx that calls /api/sync/token and opens Audible URL
-- [ ] T028 [US2] Update dashboard page in packages/ui/src/app/dashboard/page.tsx to display SyncStatus and ConnectExtensionButton
-- [ ] T029 [US2] Implement token generation logic: query latest SyncHistory, check if user has synced before, generate JWT with jti claim, insert SyncToken record with expires_at
+- [x] T025 [US2] Create POST /api/sync/token route in packages/ui/src/app/api/sync/token/route.ts that generates JWT, creates SyncToken record, returns token + Audible URL
+- [x] T026 [P] [US2] Create SyncStatus component in packages/ui/src/components/dashboard/sync-status.tsx displaying connection state, last sync time, item counts
+- [x] T027 [P] [US2] Create ConnectExtensionButton component in packages/ui/src/components/dashboard/connect-extension-button.tsx that calls /api/sync/token and opens Audible URL
+- [x] T028 [US2] Update dashboard page in packages/ui/src/app/dashboard/page.tsx to display SyncStatus and ConnectExtensionButton
+- [x] T029 [US2] Implement token generation logic: query latest SyncHistory, check if user has synced before, generate JWT with jti claim, insert SyncToken record with expires_at
 
 **Checkpoint**: Token generation works, dashboard shows connection status
 
