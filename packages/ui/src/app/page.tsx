@@ -6,8 +6,8 @@ export default function Home() {
   return (
     <div className="flex min-h-screen flex-col">
       {/* Hero Section */}
-      <section className="flex flex-1 flex-col items-center justify-center px-4 py-24 text-center">
-        <div className="mx-auto max-w-3xl space-y-8">
+      <section className="flex flex-1 flex-col items-center justify-center py-24 text-center">
+        <div className="container max-w-4xl space-y-8">
           <div className="space-y-4">
             <h1 className="text-5xl font-bold tracking-tight sm:text-6xl">
               Organize & Share Your Audible Library
@@ -25,8 +25,8 @@ export default function Home() {
       </section>
 
       {/* Features Section */}
-      <section className="border-t bg-muted/50 px-4 py-16">
-        <div className="mx-auto max-w-6xl">
+      <section className="border-t bg-muted/50 py-16">
+        <div className="container max-w-6xl">
           <h2 className="mb-12 text-center text-3xl font-bold">Features</h2>
           <div className="grid gap-6 md:grid-cols-3">
             <Card className="p-6">
@@ -108,8 +108,8 @@ export default function Home() {
       </section>
 
       {/* How It Works Section */}
-      <section className="px-4 py-16">
-        <div className="mx-auto max-w-4xl">
+      <section className="py-16">
+        <div className="container max-w-4xl">
           <h2 className="mb-12 text-center text-3xl font-bold">How It Works</h2>
           <div className="space-y-8">
             <div className="flex gap-6">
@@ -152,10 +152,12 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="border-t px-4 py-8 text-center text-sm text-muted-foreground">
-        <p>
-          Your data is private and secure. We never access your Audible credentials.
-        </p>
+      <footer className="border-t py-8 text-center text-sm text-muted-foreground">
+        <div className="container">
+          <p>
+            Your data is private and secure. We never access your Audible credentials.
+          </p>
+        </div>
       </footer>
     </div>
   );

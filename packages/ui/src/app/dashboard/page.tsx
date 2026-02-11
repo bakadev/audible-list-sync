@@ -51,7 +51,7 @@ export default async function DashboardPage() {
   const hasSyncedBefore = !!lastSync;
 
   return (
-    <div className="container py-10">
+    <div className="container max-w-7xl py-10">
       <div className="space-y-8">
         <div className="space-y-2">
           <h1 className="text-4xl font-bold">
