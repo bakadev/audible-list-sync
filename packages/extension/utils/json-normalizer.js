@@ -120,8 +120,9 @@ const JSONNormalizer = {
    */
   isValidStatus(status) {
     const validStatuses = ['Finished', 'Not Started'];
-    // Pattern: "15h 39m left" or "15h 39m left (63% complete)"
-    const timePattern = /^\d+h \d+m left( \(\d+% complete\))?$/;
+    // Pattern: Any combination of time units (d/h/m/s) followed by "left" with optional percentage
+    // Examples: "39m left", "15h 39m left", "1d 5h left", "30s left (50% complete)"
+    const timePattern = /^\d+[dhms]( \d+[dhms])*\s+left( \(\d+% complete\))?$/;
 
     return (
       typeof status === 'string' &&
@@ -162,7 +163,7 @@ const JSONNormalizer = {
       errors.push('Missing required field: status');
     } else if (!this.isValidStatus(entry.status)) {
       errors.push(
-        'Invalid status: must be "Finished", "Not Started", or match pattern "Xh Ym left" or "Xh Ym left (X% complete)"'
+        'Invalid status: must be "Finished", "Not Started", or time remaining (e.g., "39m left", "15h 39m left (63% complete)")'
       );
     }
 
