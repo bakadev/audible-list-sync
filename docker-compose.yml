@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: audible-lists-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: audible
+      POSTGRES_PASSWORD: audible_dev_password
+      POSTGRES_DB: audible_lists
+      # Optional: uncomment for verbose logging
+      # POSTGRES_INITDB_ARGS: "-E UTF8"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # Optional: persist logs
+      # - ./logs/postgres:/var/log/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U audible -d audible_lists"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - audible-network
+
+  # Optional: pgAdmin for database GUI management
+  # Uncomment if you want a web UI for database management
+  # pgadmin:
+  #   image: dpage/pgadmin4:latest
+  #   container_name: audible-lists-pgadmin
+  #   restart: unless-stopped
+  #   environment:
+  #     PGADMIN_DEFAULT_EMAIL: admin@audible-lists.local
+  #     PGADMIN_DEFAULT_PASSWORD: admin
+  #     PGADMIN_CONFIG_SERVER_MODE: 'False'
+  #   ports:
+  #     - "5050:80"
+  #   volumes:
+  #     - pgadmin_data:/var/lib/pgadmin
+  #   depends_on:
+  #     - postgres
+  #   networks:
+  #     - audible-network
+
+volumes:
+  postgres_data:
+    driver: local
+  # pgadmin_data:
+  #   driver: local
+
+networks:
+  audible-network:
+    driver: bridge

@@ -1,0 +1,168 @@
+openapi: 3.1.0
+info:
+  title: Authentication API
+  description: Google OAuth authentication managed by Auth.js (NextAuth)
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:3000
+    description: Local development
+  - url: https://audible-lists.example.com
+    description: Production (placeholder)
+
+paths:
+  /api/auth/signin:
+    get:
+      summary: Initiate OAuth sign-in
+      description: Redirects user to Google OAuth consent screen
+      operationId: signIn
+      tags:
+        - Authentication
+      responses:
+        '302':
+          description: Redirect to Google OAuth
+          headers:
+            Location:
+              schema:
+                type: string
+                example: https://accounts.google.com/o/oauth2/v2/auth?...
+
+  /api/auth/callback/google:
+    get:
+      summary: OAuth callback handler
+      description: Receives authorization code from Google, exchanges for tokens, creates session
+      operationId: oauthCallback
+      tags:
+        - Authentication
+      parameters:
+        - name: code
+          in: query
+          required: true
+          schema:
+            type: string
+          description: Authorization code from Google
+        - name: state
+          in: query
+          required: true
+          schema:
+            type: string
+          description: CSRF protection state parameter
+      responses:
+        '302':
+          description: Redirect to dashboard on success, or error page on failure
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: next-auth.session-token=...; Path=/; HttpOnly; Secure; SameSite=Lax
+            Location:
+              schema:
+                type: string
+                example: /dashboard
+        '400':
+          description: Invalid authorization code or state mismatch
+          content:
+            text/html:
+              schema:
+                type: string
+
+  /api/auth/signout:
+    post:
+      summary: Sign out user
+      description: Terminates session and clears session cookie
+      operationId: signOut
+      tags:
+        - Authentication
+      security:
+        - sessionCookie: []
+      responses:
+        '302':
+          description: Redirect to landing page, session cookie cleared
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: next-auth.session-token=; Max-Age=0; Path=/
+            Location:
+              schema:
+                type: string
+                example: /
+
+  /api/auth/session:
+    get:
+      summary: Get current session
+      description: Returns current user session data if authenticated
+      operationId: getSession
+      tags:
+        - Authentication
+      security:
+        - sessionCookie: []
+      responses:
+        '200':
+          description: Session data
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: '#/components/schemas/Session'
+                  - type: object
+                    properties: {}
+                    description: Empty object if not authenticated
+              examples:
+                authenticated:
+                  value:
+                    user:
+                      id: "550e8400-e29b-41d4-a716-446655440000"
+                      email: "user@example.com"
+                      name: "John Doe"
+                      image: "https://lh3.googleusercontent.com/..."
+                    expires: "2026-03-15T10:30:00.000Z"
+                unauthenticated:
+                  value: {}
+
+components:
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: next-auth.session-token
+      description: NextAuth session cookie (httpOnly, secure, sameSite=lax)
+
+  schemas:
+    Session:
+      type: object
+      required:
+        - user
+        - expires
+      properties:
+        user:
+          type: object
+          required:
+            - id
+            - email
+          properties:
+            id:
+              type: string
+              format: uuid
+              description: User ID
+            email:
+              type: string
+              format: email
+              description: User email
+            name:
+              type: string
+              nullable: true
+              description: User display name
+            image:
+              type: string
+              format: uri
+              nullable: true
+              description: User avatar URL
+        expires:
+          type: string
+          format: date-time
+          description: Session expiration timestamp
+
+tags:
+  - name: Authentication
+    description: OAuth and session management (handled by Auth.js)

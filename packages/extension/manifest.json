@@ -1,0 +1,51 @@
+{
+  "manifest_version": 3,
+  "name": "Audible Library Extension",
+  "version": "2.0.0",
+  "description": "Export your Audible library with user-specific data (ratings, listening progress) for backup and analysis",
+  "permissions": [
+    "activeTab",
+    "storage"
+  ],
+  "host_permissions": [
+    "*://*.audible.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "*://*.audible.com/library*",
+        "*://*.audible.com/wl*"
+      ],
+      "js": [
+        "utils/storage-manager.js",
+        "utils/rate-limiter.js",
+        "utils/retry-handler.js",
+        "utils/json-normalizer.js",
+        "scraper/metadata-extractor.js",
+        "scraper/library-scraper.js",
+        "scraper/wishlist-scraper.js",
+        "overlay-ui.js",
+        "content-script.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "overlay-ui.js",
+        "styles/overlay.css",
+        "scraper/*.js",
+        "utils/*.js"
+      ],
+      "matches": [
+        "*://*.audible.com/*"
+      ]
+    }
+  ]
+}

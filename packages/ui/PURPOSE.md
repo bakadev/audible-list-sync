@@ -1,81 +1,168 @@
-# UI — Website Application
+# UI Package - Next.js Web Application
 
 ## Purpose
 
-The core web application that serves as the platform's frontend and backend. This is where users manage their accounts, view their synced libraries, build curated lists and tier rankings, and share their collections with others.
+The core web application that serves as the platform's frontend and backend. This is where users manage their accounts, view their synced libraries, generate sync tokens for the extension, and browse their audiobook collections.
 
-## What It Does
+## Responsibilities
 
-### User Accounts and Authentication
+### Authentication & User Management
 
-- User registration and login.
-- Profile management (display name, avatar, privacy settings).
-- Session management and secure authentication.
+- Google OAuth authentication via Auth.js (NextAuth)
+- User session management
+- Account creation and profile display
 
-### Extension Connection
+### Sync Token Generation
 
-- "Connect extractor" flow that generates a short-lived, single-use sync token tied to the user's account.
-- Opens Audible in a new tab with the token embedded for the extension to pick up.
-- Dashboard display of connection status, last sync timestamp, and sync history.
+- Generate short-lived JWT tokens for extension connection
+- Track token usage and expiration in database
+- Provide "Connect extension" flow that opens Audible with token in URL
 
-### Import Endpoint
+### Library Import API
 
-- Receives JSON payloads from the extension via POST.
-- Validates the sync token (expiry, single-use, user association).
-- Validates payload shape and enforces size limits.
-- Processes the payload:
-  - Checks each title against the shared catalog by ID (ASIN). Adds new titles to the catalog if they don't exist.
-  - Updates the user's library and wishlist with title references and personal metadata (listening progress, personal rating, date added, etc.).
-- Returns a success response with a summary of what was imported.
+- Accept JSON payloads from browser extension
+- Validate sync tokens (JWT authentication)
+- Process audiobook metadata into normalized database
+- Full-replace import strategy: delete old entries, insert new data
+- Log sync events for audit trail
 
 ### Library Browsing
 
-- Users can browse their synced library and wishlist.
-- Title details are populated from the shared catalog — the user's personal data (progress, ratings) is layered on top.
-- Filtering and sorting by author, narrator, series, duration, rating, genre, etc.
+- Display user's synced audiobook library
+- Real-time search by title, author, or narrator
+- Show cover art, metadata, listening progress
+- Empty state for users without synced data
 
-### Recommendation Lists
+### Dashboard
 
-- Users create themed, ordered lists from titles in their personal library.
-- Each list has a title, optional description, and an ordered set of titles.
-- Users can only add titles that exist in their own library.
-- Examples: "Funniest LitRPG," "Best Series for Road Trips," "Books by Favorite Narrator."
+- Display sync history (last 5 events)
+- Show library statistics (total count, library vs wishlist breakdown)
+- Provide re-sync functionality
 
-### Tier Lists
+## Technology Stack
 
-- Users rank titles from their library into customizable tiers (S, A, B, C, D, F or user-defined).
-- Drag-and-drop organization.
-- Users can only add titles that exist in their own library.
+- **Framework**: Next.js 16 (App Router)
+- **Language**: TypeScript 5.x (strict mode)
+- **Styling**: Tailwind CSS v4 + shadcn/ui components
+- **Authentication**: Auth.js (NextAuth) with Google OAuth
+- **Database**: PostgreSQL via Prisma ORM
+- **API**: Next.js API Routes (REST)
 
-### Sharing and Visibility
+## Package Structure
 
-- Users control visibility of their profile, library, and individual lists:
-  - **Public** — visible to anyone.
-  - **Unlisted** — accessible only via direct link.
-  - **Friends only** — visible to approved connections.
-- Shareable URLs for profiles, libraries, recommendation lists, and tier lists.
+```
+packages/ui/
+├── src/
+│   ├── app/                 # Next.js App Router
+│   │   ├── (auth)/          # Auth pages (signin)
+│   │   ├── dashboard/       # Dashboard pages
+│   │   ├── library/         # Library browse page
+│   │   ├── api/             # API routes
+│   │   │   ├── auth/        # NextAuth
+│   │   │   ├── sync/        # Token + import endpoints
+│   │   │   └── library/     # Library query endpoints
+│   │   ├── layout.tsx       # Root layout
+│   │   └── page.tsx         # Landing page
+│   ├── components/          # React components
+│   │   ├── ui/              # shadcn/ui base components
+│   │   ├── dashboard/       # Dashboard-specific components
+│   │   └── library/         # Library-specific components
+│   └── lib/                 # Utilities
+│       ├── prisma.ts        # Prisma client singleton
+│       ├── auth.ts          # NextAuth configuration
+│       └── jwt.ts           # JWT utilities
+├── prisma/
+│   ├── schema.prisma        # Database schema
+│   └── migrations/          # Prisma migrations
+├── public/                  # Static assets
+├── .env.example             # Environment variables template
+├── next.config.ts           # Next.js configuration
+├── tailwind.config.ts       # Tailwind configuration
+└── tsconfig.json            # TypeScript configuration
+```
 
-### Sync Management
+## Key Interactions
 
-- Dashboard showing sync history with timestamps, item counts, and any warnings.
-- "Update library" action to trigger a new sync (generates a fresh token and opens the connect flow).
-- Ability to revoke the extension connection, invalidating future tokens.
+| Action         | Direction       | Description                              |
+| -------------- | --------------- | ---------------------------------------- |
+| OAuth Login    | User → Website  | Google OAuth authentication flow         |
+| Generate Token | Dashboard → API | POST /api/sync/token creates JWT         |
+| Import Data    | Extension → API | POST /api/sync/import with JWT + payload |
+| Browse Library | User → Website  | View synced titles, search/filter        |
+| View History   | Dashboard → API | GET /api/sync/history shows sync events  |
 
-## What It Does NOT Do
+## Data Flow
 
-- Does not scrape Audible — that's the extension's job.
-- Does not store or request Amazon/Audible credentials.
-- Does not allow users to add titles to lists that aren't in their personal library.
+```
+User signs in with Google
+  ↓
+Dashboard loads (protected route)
+  ↓
+User clicks "Connect extension"
+  ↓
+POST /api/sync/token generates JWT
+  ↓
+Audible.com opens with token in URL fragment
+  ↓
+Extension uploads library data
+  ↓
+POST /api/sync/import validates JWT, processes payload
+  ↓
+Database updated (TitleCatalog + UserLibrary entries)
+  ↓
+Dashboard shows updated stats and sync history
+  ↓
+User browses library on /library page
+```
 
-## Key Pages / Views
+## Security Principles
 
-| Page | Description |
-|------|-------------|
-| Landing / Home | Platform overview and sign-up prompt |
-| Dashboard | User's library overview, sync status, quick actions |
-| Library | Full browsable library with filtering and sorting |
-| Wishlist | Synced wishlist view |
-| List Builder | Create and edit recommendation lists |
-| Tier List Builder | Create and edit tier rankings |
-| Profile / Share Page | Public-facing view of a user's collection and lists |
-| Settings | Account, privacy, and connection management |
+- **No credential storage**: Never store Amazon/Audible credentials
+- **JWT authentication**: Sync tokens are short-lived (15min), single-use, signed
+- **Session management**: Database-backed sessions via NextAuth
+- **Protected routes**: Middleware enforces authentication on /dashboard and /library
+- **Input validation**: All API endpoints validate payload structure and size
+- **Private by default**: User libraries are not publicly accessible (MVP)
+
+## What This Package Does NOT Do
+
+- **No scraping**: Extension handles Audible scraping, not this package
+- **No Docker setup**: Database container managed by packages/db
+- **No shared types package**: Types defined inline for MVP (future extraction)
+- **No automated testing**: Deferred for MVP, architecture supports future addition
+- **No deployment config**: Self-hosted deployment handled separately
+
+## Development Workflow
+
+1. **Prerequisites**: PostgreSQL running, environment variables configured
+2. **Install dependencies**: `pnpm install`
+3. **Generate Prisma Client**: `pnpm prisma generate`
+4. **Run migrations**: `pnpm prisma migrate dev`
+5. **Start dev server**: `pnpm dev`
+6. **Access app**: http://localhost:3000
+
+## API Endpoints
+
+### Authentication
+
+- `POST /api/auth/[...nextauth]` - NextAuth OAuth flow (managed by Auth.js)
+
+### Sync Operations
+
+- `POST /api/sync/token` - Generate sync token (requires auth)
+- `POST /api/sync/import` - Import library data (requires JWT)
+- `GET /api/sync/history` - Fetch sync history (requires auth)
+
+### Library Queries
+
+- `GET /api/library` - Query user library (requires auth, supports search param)
+- `GET /api/library/stats` - Library statistics (requires auth)
+
+## Future Enhancements (Post-MVP)
+
+- Recommendation lists (user-curated themed lists)
+- Tier lists (S/A/B/C/D ranking system)
+- Sharing controls (public/unlisted/friends-only visibility)
+- Social features (view-only, no likes/comments)
+- Additional OAuth providers (GitHub, email/password)
+- Multi-region Audible support (UK, Canada, etc.)

@@ -1,0 +1,270 @@
+/* Audible Library Extension - Overlay Styles */
+
+/* Container for the entire overlay */
+.audible-ext-overlay {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 999999;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+    sans-serif;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+/* Main panel */
+.audible-ext-panel {
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-width: 320px;
+  max-width: 400px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+/* Panel header */
+.audible-ext-header {
+  background: linear-gradient(135deg, #ff9500 0%, #ff6600 100%);
+  color: white;
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+}
+
+.audible-ext-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.audible-ext-toggle {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Panel body */
+.audible-ext-body {
+  padding: 16px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.audible-ext-body.collapsed {
+  display: none;
+}
+
+/* Status text */
+.audible-ext-status {
+  margin-bottom: 12px;
+  color: #333;
+  font-size: 13px;
+}
+
+.audible-ext-status.error {
+  color: #d32f2f;
+}
+
+.audible-ext-status.success {
+  color: #388e3c;
+}
+
+/* Progress section */
+.audible-ext-progress {
+  margin-bottom: 16px;
+}
+
+.audible-ext-progress-label {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  font-size: 12px;
+  color: #666;
+}
+
+.audible-ext-progress-bar {
+  width: 100%;
+  height: 8px;
+  background: #f0f0f0;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.audible-ext-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ff9500 0%, #ff6600 100%);
+  transition: width 0.3s ease;
+  border-radius: 4px;
+}
+
+/* Statistics */
+.audible-ext-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 16px;
+  font-size: 12px;
+}
+
+.audible-ext-stat {
+  background: #f9f9f9;
+  padding: 8px;
+  border-radius: 4px;
+  text-align: center;
+}
+
+.audible-ext-stat-value {
+  display: block;
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+}
+
+.audible-ext-stat-label {
+  display: block;
+  color: #666;
+  margin-top: 4px;
+}
+
+/* Error Actions */
+.audible-ext-error-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.audible-ext-error-actions .audible-ext-button {
+  flex: 1;
+}
+
+/* Buttons */
+.audible-ext-button {
+  width: 100%;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-bottom: 8px;
+}
+
+.audible-ext-button:last-child {
+  margin-bottom: 0;
+}
+
+.audible-ext-button-primary {
+  background: linear-gradient(135deg, #ff9500 0%, #ff6600 100%);
+  color: white;
+}
+
+.audible-ext-button-primary:hover {
+  background: linear-gradient(135deg, #ff8800 0%, #ff5500 100%);
+  box-shadow: 0 2px 8px rgba(255, 102, 0, 0.3);
+}
+
+.audible-ext-button-primary:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.audible-ext-button-secondary {
+  background: white;
+  color: #ff6600;
+  border: 1px solid #ff6600;
+}
+
+.audible-ext-button-secondary:hover {
+  background: #fff5f0;
+}
+
+.audible-ext-button-success {
+  background: #4caf50;
+  color: white;
+}
+
+.audible-ext-button-success:hover {
+  background: #45a049;
+}
+
+/* Warnings */
+.audible-ext-warnings {
+  margin-top: 12px;
+  padding: 8px;
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #856404;
+}
+
+.audible-ext-warning-item {
+  margin: 4px 0;
+}
+
+/* Spinner */
+.audible-ext-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid #ff6600;
+  border-radius: 50%;
+  animation: audible-ext-spin 1s linear infinite;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+@keyframes audible-ext-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Scrollbar styling */
+.audible-ext-body::-webkit-scrollbar {
+  width: 6px;
+}
+
+.audible-ext-body::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.audible-ext-body::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 3px;
+}
+
+.audible-ext-body::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .audible-ext-overlay {
+    bottom: 10px;
+    right: 10px;
+  }
+
+  .audible-ext-panel {
+    min-width: 280px;
+    max-width: calc(100vw - 20px);
+  }
+}
