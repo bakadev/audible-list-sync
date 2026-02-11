@@ -126,15 +126,15 @@ All paths relative to `packages/extension/` directory:
 
 **Purpose**: Validation, documentation, and final cleanup affecting multiple user stories
 
-- [ ] T028 [P] Validate JSON output against contracts/extension-output.schema.json using JSON Schema validator
-- [ ] T029 [P] Test quickstart.md Scenario 1 (Small Library Extraction) - verify all fields extracted correctly
-- [ ] T030 [P] Test quickstart.md Scenario 2 (User Rating Extraction) - verify 0-5 star ratings
-- [ ] T031 [P] Test quickstart.md Scenario 3 (Listening Status Extraction) - verify Finished/Not Started/time patterns
-- [ ] T032 [P] Test quickstart.md Scenario 4 (Wishlist Extraction) - verify source: "WISHLIST" flag
-- [ ] T033 [P] Test quickstart.md Scenario 5 (Large Library Performance) - verify <1 minute for 100 titles
-- [ ] T034 [P] Test quickstart.md Scenario 6 (UI Simplification) - verify no settings panel visible
-- [ ] T035 Test quickstart.md Scenario 9 (JSON Schema Validation) - upload JSON to validator, confirm passes
-- [ ] T036 Update CLAUDE.md agent context if any new patterns discovered during implementation
+- [X] T028 [P] Validate JSON output against contracts/extension-output.schema.json using JSON Schema validator
+- [X] T029 [P] Test quickstart.md Scenario 1 (Small Library Extraction) - verify all fields extracted correctly
+- [X] T030 [P] Test quickstart.md Scenario 2 (User Rating Extraction) - verify 0-5 star ratings
+- [X] T031 [P] Test quickstart.md Scenario 3 (Listening Status Extraction) - verify Finished/Not Started/time patterns
+- [X] T032 [P] Test quickstart.md Scenario 4 (Wishlist Extraction) - verify source: "WISHLIST" flag
+- [X] T033 [P] Test quickstart.md Scenario 5 (Large Library Performance) - verify <1 minute for 100 titles
+- [X] T034 [P] Test quickstart.md Scenario 6 (UI Simplification) - verify no settings panel visible
+- [X] T035 Test quickstart.md Scenario 9 (JSON Schema Validation) - upload JSON to validator, confirm passes
+- [X] T036 Update CLAUDE.md agent context if any new patterns discovered during implementation
 - [X] T037 Add inline comments to extractUserRating and extractListeningStatus methods documenting DOM patterns
 - [X] T038 [P] Remove dead code and unused imports (StoreScraper references, settings-related code)
 - [X] T039 Update manifest.json description to reflect simplified scope
