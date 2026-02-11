@@ -45,7 +45,7 @@ const LibraryScraper = {
       let totalPages = 1;
 
       if (pagingContainer) {
-        const paginationText = pagingContainer.textContent;
+        const paginationText = pagingContainer.textContent.trim();
         console.log(`[LibraryScraper] DEBUG - Pagination text:`, paginationText);
 
         // Parse "1-50 of 247 results" to get total count

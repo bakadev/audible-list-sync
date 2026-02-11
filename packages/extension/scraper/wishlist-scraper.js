@@ -45,7 +45,7 @@ const WishlistScraper = {
       let totalPages = 1;
 
       if (pagingContainer) {
-        const paginationText = pagingContainer.textContent;
+        const paginationText = pagingContainer.textContent.trim();
         console.log(`[WishlistScraper] DEBUG - Pagination text:`, paginationText);
 
         // Parse "1-50 of 247 results" to get total count
@@ -131,14 +131,28 @@ const WishlistScraper = {
   extractWishlistRows(doc) {
     const container = doc.querySelector('div.adbl-main');
     if (!container) {
-      console.warn('[WishlistScraper] Wishlist container not found');
+      console.warn('[WishlistScraper] Wishlist container (div.adbl-main) not found');
+      console.log('[WishlistScraper] DEBUG - Available containers:',
+        Array.from(doc.querySelectorAll('[class*="adbl"]')).map(el => el.className).slice(0, 5));
       return [];
     }
 
-    // Wishlist uses similar structure to library
-    const rows = container.querySelectorAll(
-      '#adbl-library-content-main > .adbl-library-content-row'
-    );
+    console.log('[WishlistScraper] Container found:', container.className);
+
+    // Try multiple selectors to handle different wishlist page structures
+    let rows = container.querySelectorAll('#adbl-library-content-main > .adbl-library-content-row');
+
+    // Fallback: try without the ID selector
+    if (rows.length === 0) {
+      rows = container.querySelectorAll('.adbl-library-content-row');
+      console.log('[WishlistScraper] Using fallback selector (no ID constraint)');
+    }
+
+    // Fallback 2: try with different container ID
+    if (rows.length === 0) {
+      rows = container.querySelectorAll('[id*="content"] > [class*="row"]');
+      console.log('[WishlistScraper] Using generic row selector');
+    }
 
     console.log(`[WishlistScraper] Found ${rows.length} wishlist rows`);
     return Array.from(rows);
