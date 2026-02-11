@@ -108,9 +108,9 @@ const JSONNormalizer = {
   isValidAsin(asin) {
     // Accept multiple formats:
     // 1. Standard ASIN: B followed by 9 alphanumeric characters (e.g., B09GHRGYRF)
-    // 2. ISBN-10: 10 digits (e.g., 1774241307)
+    // 2. ISBN-10: 9 digits followed by digit or X (e.g., 1774241307 or 177424389X)
     // 3. ISBN-13: 13 digits (e.g., 9781774241301)
-    return /^B[0-9A-Z]{9}$/.test(asin) || /^\d{10}$/.test(asin) || /^\d{13}$/.test(asin);
+    return /^B[0-9A-Z]{9}$/.test(asin) || /^\d{9}[\dX]$/.test(asin) || /^\d{13}$/.test(asin);
   },
 
   /**
@@ -120,7 +120,8 @@ const JSONNormalizer = {
    */
   isValidStatus(status) {
     const validStatuses = ['Finished', 'Not Started'];
-    const timePattern = /^\d+h \d+m left$/; // Pattern: "15h 39m left"
+    // Pattern: "15h 39m left" or "15h 39m left (63% complete)"
+    const timePattern = /^\d+h \d+m left( \(\d+% complete\))?$/;
 
     return (
       typeof status === 'string' &&
@@ -161,7 +162,7 @@ const JSONNormalizer = {
       errors.push('Missing required field: status');
     } else if (!this.isValidStatus(entry.status)) {
       errors.push(
-        'Invalid status: must be "Finished", "Not Started", or match pattern "Xh Ym left"'
+        'Invalid status: must be "Finished", "Not Started", or match pattern "Xh Ym left" or "Xh Ym left (X% complete)"'
       );
     }
 
