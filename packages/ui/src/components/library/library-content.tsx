@@ -100,7 +100,7 @@ export function LibraryContent() {
         <div className="rounded-lg border bg-card p-12 text-center">
           <div className="mx-auto max-w-md space-y-2">
             <h3 className="text-lg font-semibold">No results found</h3>
-            <p className="text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               Try a different search term or browse all titles
             </p>
           </div>

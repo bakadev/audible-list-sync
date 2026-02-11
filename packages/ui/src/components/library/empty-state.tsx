@@ -23,7 +23,7 @@ export function EmptyState() {
           </svg>
         </div>
         <h2 className="text-2xl font-semibold">No Titles Yet</h2>
-        <p className="text-muted-foreground">
+        <p className="text-sm text-muted-foreground">
           Your library is empty. Sync your Audible account to see your audiobooks here.
         </p>
         <div className="pt-4">

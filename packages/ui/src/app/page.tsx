@@ -9,7 +9,7 @@ export default function Home() {
       <section className="flex flex-1 flex-col items-center justify-center py-16 md:py-24 lg:py-32">
         <div className="container max-w-4xl space-y-8 px-4">
           <div className="space-y-6 text-center">
-            <div className="inline-flex items-center rounded-full border bg-muted px-3 py-1 text-sm">
+            <div className="inline-flex items-center rounded-full border bg-muted px-3 py-1 text-xs">
               <span className="mr-2">✨</span>
               <span>Sync, browse, and organize your audiobooks</span>
             </div>
@@ -53,7 +53,7 @@ export default function Home() {
                   </svg>
                 </div>
                 <h3 className="text-xl font-semibold">Sync Your Library</h3>
-                <p className="text-muted-foreground">
+                <p className="text-sm text-muted-foreground">
                   Securely sync your Audible library and wishlist with one click. Keep your collection up to date.
                 </p>
               </div>
@@ -78,7 +78,7 @@ export default function Home() {
                   </svg>
                 </div>
                 <h3 className="text-xl font-semibold">Browse & Search</h3>
-                <p className="text-muted-foreground">
+                <p className="text-sm text-muted-foreground">
                   Easily search through your entire collection. Filter by title, author, narrator, and more.
                 </p>
               </div>
@@ -103,7 +103,7 @@ export default function Home() {
                   </svg>
                 </div>
                 <h3 className="text-xl font-semibold">Curate Lists</h3>
-                <p className="text-muted-foreground">
+                <p className="text-sm text-muted-foreground">
                   Create recommendation lists and tier lists to organize and share your favorite audiobooks.
                 </p>
               </div>
@@ -123,7 +123,7 @@ export default function Home() {
               </div>
               <div className="space-y-2">
                 <h3 className="text-xl font-semibold">Sign In with Google</h3>
-                <p className="text-muted-foreground">
+                <p className="text-sm text-muted-foreground">
                   Create an account using your Google credentials. Quick and secure.
                 </p>
               </div>
@@ -135,7 +135,7 @@ export default function Home() {
               </div>
               <div className="space-y-2">
                 <h3 className="text-xl font-semibold">Connect Your Library</h3>
-                <p className="text-muted-foreground">
+                <p className="text-sm text-muted-foreground">
                   Install our browser extension and sync your Audible library. We only read your public library data.
                 </p>
               </div>
@@ -147,7 +147,7 @@ export default function Home() {
               </div>
               <div className="space-y-2">
                 <h3 className="text-xl font-semibold">Browse and Organize</h3>
-                <p className="text-muted-foreground">
+                <p className="text-sm text-muted-foreground">
                   Search your collection, track your progress, and create lists to share with others.
                 </p>
               </div>

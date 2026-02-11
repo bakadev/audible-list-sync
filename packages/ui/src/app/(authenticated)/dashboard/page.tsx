@@ -54,10 +54,10 @@ export default async function DashboardPage() {
     <div className="container max-w-6xl py-8 md:py-12">
       <div className="space-y-6">
         <div className="space-y-2">
-          <h1 className="text-3xl font-bold md:text-4xl">
+          <h1 className="text-3xl font-bold leading-tight md:text-5xl">
             Welcome back, {session.user.name?.split(" ")[0] || "there"}!
           </h1>
-          <p className="text-base text-muted-foreground md:text-lg">
+          <p className="text-base text-muted-foreground">
             Manage your Audible library and create recommendation lists.
           </p>
         </div>

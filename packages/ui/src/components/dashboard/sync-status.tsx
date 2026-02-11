@@ -51,15 +51,15 @@ export function SyncStatus({
         {hasData && (
           <div className="grid grid-cols-3 gap-4 pt-2">
             <div className="space-y-1">
-              <p className="text-2xl font-bold">{totalItems}</p>
+              <p className="text-3xl font-bold">{totalItems}</p>
               <p className="text-xs text-muted-foreground">Total Items</p>
             </div>
             <div className="space-y-1">
-              <p className="text-2xl font-bold">{libraryCount}</p>
+              <p className="text-3xl font-bold">{libraryCount}</p>
               <p className="text-xs text-muted-foreground">Library</p>
             </div>
             <div className="space-y-1">
-              <p className="text-2xl font-bold">{wishlistCount}</p>
+              <p className="text-3xl font-bold">{wishlistCount}</p>
               <p className="text-xs text-muted-foreground">Wishlist</p>
             </div>
           </div>
