@@ -1,7 +1,7 @@
 /**
  * Content Script - Main entry point
  *
- * Injected on audible.com/library* and audible.com/wl*
+ * Injected on audible.com/library* (includes /library/wishlist)
  * Coordinates:
  * - Module loading
  * - Overlay UI initialization
@@ -145,7 +145,7 @@
         });
 
         // Fetch wishlist page
-        const wishlistUrl = 'https://www.audible.com/wl';
+        const wishlistUrl = 'https://www.audible.com/library/wishlist';
         const wishlistResponse = await fetch(wishlistUrl);
 
         if (wishlistResponse.ok) {

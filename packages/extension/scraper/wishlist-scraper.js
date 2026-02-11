@@ -25,7 +25,7 @@ const WishlistScraper = {
       console.log(`[WishlistScraper] Max page size: ${maxPageSize}`);
 
       // Step 2: Build URL with max page size (always use wishlist URL, not window.location)
-      const baseUrl = new URL('https://www.audible.com/wl');
+      const baseUrl = new URL('https://www.audible.com/library/wishlist');
       baseUrl.searchParams.set('pageSize', maxPageSize);
       baseUrl.searchParams.set('page', '1');
 
@@ -94,7 +94,7 @@ const WishlistScraper = {
       return {
         totalPages: 1,
         pageSize: 50,
-        pageUrls: ['https://www.audible.com/wl'],
+        pageUrls: ['https://www.audible.com/library/wishlist'],
         firstPageDoc: null,
       };
     }
