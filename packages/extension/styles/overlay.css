@@ -139,6 +139,17 @@
   margin-top: 4px;
 }
 
+/* Error Actions */
+.audible-ext-error-actions {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.audible-ext-error-actions .audible-ext-button {
+  flex: 1;
+}
+
 /* Buttons */
 .audible-ext-button {
   width: 100%;

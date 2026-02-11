@@ -40,6 +40,8 @@ const OverlayUI = {
     onPauseSync: null,
     onDownload: null,
     onSettingsChange: null,
+    onRetry: null,
+    onCancel: null,
   },
 
   /**
@@ -142,6 +144,12 @@ const OverlayUI = {
           <button class="audible-ext-button audible-ext-button-primary start-button">Start Sync</button>
           <button class="audible-ext-button audible-ext-button-success download-button" style="display: none;">Download JSON</button>
 
+          <!-- Error Recovery Buttons -->
+          <div class="audible-ext-error-actions" style="display: none;">
+            <button class="audible-ext-button audible-ext-button-primary retry-button">Retry</button>
+            <button class="audible-ext-button audible-ext-button-secondary cancel-button">Cancel</button>
+          </div>
+
           <!-- Warnings -->
           <div class="audible-ext-warnings" style="display: none;">
             <strong>Warnings:</strong>
@@ -173,6 +181,9 @@ const OverlayUI = {
       currentPageOnlyCheckbox: container.querySelector('.current-page-only-checkbox'),
       startButton: container.querySelector('.start-button'),
       downloadButton: container.querySelector('.download-button'),
+      errorActions: container.querySelector('.audible-ext-error-actions'),
+      retryButton: container.querySelector('.retry-button'),
+      cancelButton: container.querySelector('.cancel-button'),
       warnings: container.querySelector('.audible-ext-warnings'),
       warningsList: container.querySelector('.warnings-list'),
     };
@@ -219,6 +230,20 @@ const OverlayUI = {
 
       if (this.callbacks.onSettingsChange) {
         this.callbacks.onSettingsChange({ currentPageOnly: checked });
+      }
+    });
+
+    // Retry button
+    this.elements.retryButton.addEventListener('click', () => {
+      if (this.callbacks.onRetry) {
+        this.callbacks.onRetry();
+      }
+    });
+
+    // Cancel button
+    this.elements.cancelButton.addEventListener('click', () => {
+      if (this.callbacks.onCancel) {
+        this.callbacks.onCancel();
       }
     });
   },
@@ -354,15 +379,22 @@ const OverlayUI = {
     }
 
     // Buttons
-    if (status === 'idle' || status === 'error') {
+    if (status === 'idle') {
       this.elements.startButton.style.display = 'block';
       this.elements.downloadButton.style.display = 'none';
+      this.elements.errorActions.style.display = 'none';
+    } else if (status === 'error') {
+      this.elements.startButton.style.display = 'none';
+      this.elements.downloadButton.style.display = 'none';
+      this.elements.errorActions.style.display = 'flex';
     } else if (status === 'complete') {
       this.elements.startButton.style.display = 'none';
       this.elements.downloadButton.style.display = 'block';
+      this.elements.errorActions.style.display = 'none';
     } else if (status === 'scraping') {
       this.elements.startButton.style.display = 'none';
       this.elements.downloadButton.style.display = 'none';
+      this.elements.errorActions.style.display = 'none';
     }
 
     // Warnings

@@ -117,12 +117,12 @@ All paths relative to `packages/extension/` directory:
 
 ### Implementation for User Story 4
 
-- [ ] T029 [P] [US4] Implement authentication detection in scraper/metadata-extractor.js (detect login page redirect URLs, specific DOM elements indicating logged-out state)
-- [ ] T030 [P] [US4] Implement CAPTCHA detection in scraper/metadata-extractor.js (detect HTTP response codes 403, page content patterns with "captcha" or "robot" keywords)
-- [ ] T031 [P] [US4] Implement 429 rate limit detection and adaptive backoff in utils/retry-handler.js (pause 30 seconds on 429, reduce rate to 50% of current setting)
-- [ ] T032 [US4] Add error message display to overlay UI in overlay-ui.js (clear, actionable messages: "Not logged in to Audible", "Network error - retrying...", "CAPTCHA detected - please solve and restart")
-- [ ] T033 [US4] Implement pause/resume functionality in content-script.js (save progress on page unload, detect incomplete session on load, show "Resume" or "Start Fresh" options)
-- [ ] T034 [US4] Add error recovery options to overlay UI in overlay-ui.js (Retry button, Resume button, Cancel button, display partial scrape warnings)
+- [X] T029 [P] [US4] Implement authentication detection in scraper/metadata-extractor.js (detect login page redirect URLs, specific DOM elements indicating logged-out state)
+- [X] T030 [P] [US4] Implement CAPTCHA detection in scraper/metadata-extractor.js (detect HTTP response codes 403, page content patterns with "captcha" or "robot" keywords)
+- [X] T031 [P] [US4] Implement 429 rate limit detection and adaptive backoff in utils/retry-handler.js (pause 30 seconds on 429, reduce rate to 50% of current setting)
+- [X] T032 [US4] Add error message display to overlay UI in overlay-ui.js (clear, actionable messages: "Not logged in to Audible", "Network error - retrying...", "CAPTCHA detected - please solve and restart")
+- [ ] T033 [US4] Implement pause/resume functionality in content-script.js (save progress on page unload, detect incomplete session on load, show "Resume" or "Start Fresh" options) - SKIPPED (not needed per user request)
+- [X] T034 [US4] Add error recovery options to overlay UI in overlay-ui.js (Retry button, Cancel button, display partial scrape warnings)
 
 **Checkpoint**: All user stories 1-4 work - extension handles errors gracefully with recovery options
 

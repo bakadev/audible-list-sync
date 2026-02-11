@@ -61,6 +61,8 @@
     onPauseSync: handlePauseSync,
     onDownload: handleDownload,
     onSettingsChange: handleSettingsChange,
+    onRetry: handleRetry,
+    onCancel: handleCancel,
   });
 
   // Load saved settings
@@ -368,6 +370,34 @@
     } catch (error) {
       console.error('[AudibleExtension] Failed to save settings:', error);
     }
+  }
+
+  /**
+   * Handle Retry button click (after error)
+   */
+  async function handleRetry() {
+    console.log('[AudibleExtension] Retrying sync...');
+
+    // Reset error state
+    OverlayUI.reset();
+
+    // Restart the sync process
+    await handleStartSync();
+  }
+
+  /**
+   * Handle Cancel button click (after error)
+   */
+  function handleCancel() {
+    console.log('[AudibleExtension] Cancelling sync...');
+
+    // Reset to idle state
+    extensionState.scraping = false;
+    extensionState.paused = false;
+    extensionState.scrapedTitles = [];
+    extensionState.warnings = [];
+
+    OverlayUI.reset();
   }
 
   /**
