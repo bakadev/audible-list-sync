@@ -1,24 +1,24 @@
-import { auth } from '@/lib/auth';
-import { NextResponse } from 'next/server';
+import { auth } from "@/lib/auth";
+import { NextResponse } from "next/server";
 
 export default auth((req) => {
   const isLoggedIn = !!req.auth;
   const { pathname } = req.nextUrl;
 
   // Protected routes that require authentication
-  const protectedRoutes = ['/dashboard', '/library'];
+  const protectedRoutes = ["/dashboard", "/library"];
   const isProtectedRoute = protectedRoutes.some((route) => pathname.startsWith(route));
 
   // Redirect unauthenticated users to signin
   if (isProtectedRoute && !isLoggedIn) {
-    const signInUrl = new URL('/signin', req.url);
-    signInUrl.searchParams.set('callbackUrl', pathname);
+    const signInUrl = new URL("/signin", req.url);
+    signInUrl.searchParams.set("callbackUrl", pathname);
     return NextResponse.redirect(signInUrl);
   }
 
   // Redirect authenticated users away from signin page
-  if (pathname === '/signin' && isLoggedIn) {
-    return NextResponse.redirect(new URL('/dashboard', req.url));
+  if (pathname === "/signin" && isLoggedIn) {
+    return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 
   return NextResponse.next();
@@ -34,6 +34,6 @@ export const config = {
      * - favicon.ico (favicon file)
      * - public folder
      */
-    '/((?!api/auth|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    "/((?!api/auth|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],
 };

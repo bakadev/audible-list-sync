@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { verifySyncToken, extractBearerToken } from '@/lib/jwt';
-import prisma from '@/lib/prisma';
-import { LibrarySource } from '@prisma/client';
+import { NextRequest, NextResponse } from "next/server";
+import { verifySyncToken, extractBearerToken } from "@/lib/jwt";
+import prisma from "@/lib/prisma";
+import { LibrarySource } from "@prisma/client";
 
 // Maximum payload size: 50MB
 const MAX_PAYLOAD_SIZE = 50 * 1024 * 1024;
@@ -23,7 +23,7 @@ interface ImportTitle {
   releaseDate?: string | null;
   language?: string | null;
   categories?: string[];
-  source: 'LIBRARY' | 'WISHLIST';
+  source: "LIBRARY" | "WISHLIST";
   listeningProgress?: number;
   personalRating?: number | null;
   dateAdded: string;
@@ -45,12 +45,12 @@ interface ImportResult {
 export async function POST(request: NextRequest) {
   try {
     // T031: JWT validation - extract token from Authorization header
-    const authHeader = request.headers.get('authorization');
+    const authHeader = request.headers.get("authorization");
     const token = extractBearerToken(authHeader);
 
     if (!token) {
       return NextResponse.json(
-        { error: 'Missing or invalid Authorization header' },
+        { error: "Missing or invalid Authorization header" },
         { status: 401 }
       );
     }
@@ -60,10 +60,7 @@ export async function POST(request: NextRequest) {
     try {
       payload = verifySyncToken(token);
     } catch {
-      return NextResponse.json(
-        { error: 'Invalid or expired token' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Invalid or expired token" }, { status: 401 });
     }
 
     const userId = payload.sub;
@@ -75,64 +72,46 @@ export async function POST(request: NextRequest) {
     });
 
     if (!syncToken) {
-      return NextResponse.json(
-        { error: 'Token not found' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Token not found" }, { status: 401 });
     }
 
     if (syncToken.used) {
-      return NextResponse.json(
-        { error: 'Token already used' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Token already used" }, { status: 401 });
     }
 
     if (syncToken.userId !== userId) {
-      return NextResponse.json(
-        { error: 'Token user mismatch' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Token user mismatch" }, { status: 401 });
     }
 
     // T033: Payload validation
-    const contentLength = request.headers.get('content-length');
+    const contentLength = request.headers.get("content-length");
     if (contentLength && parseInt(contentLength) > MAX_PAYLOAD_SIZE) {
-      return NextResponse.json(
-        { error: 'Payload too large (max 50MB)' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Payload too large (max 50MB)" }, { status: 400 });
     }
 
     let body: ImportPayload;
     try {
       body = await request.json();
     } catch {
-      return NextResponse.json(
-        { error: 'Invalid JSON payload' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Invalid JSON payload" }, { status: 400 });
     }
 
     // Validate payload structure
     if (!body.titles || !Array.isArray(body.titles)) {
-      return NextResponse.json(
-        { error: 'Missing or invalid titles array' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Missing or invalid titles array" }, { status: 400 });
     }
 
     // Validate each title has required fields
     const warnings: string[] = [];
     for (let i = 0; i < body.titles.length; i++) {
       const title = body.titles[i];
-      if (!title.asin || typeof title.asin !== 'string') {
+      if (!title.asin || typeof title.asin !== "string") {
         return NextResponse.json(
           { error: `Title at index ${i} missing required field: asin` },
           { status: 400 }
         );
       }
-      if (!title.title || typeof title.title !== 'string') {
+      if (!title.title || typeof title.title !== "string") {
         return NextResponse.json(
           { error: `Title at index ${i} missing required field: title` },
           { status: 400 }
@@ -144,7 +123,7 @@ export async function POST(request: NextRequest) {
           { status: 400 }
         );
       }
-      if (!title.source || !['LIBRARY', 'WISHLIST'].includes(title.source)) {
+      if (!title.source || !["LIBRARY", "WISHLIST"].includes(title.source)) {
         return NextResponse.json(
           { error: `Title at index ${i} missing or invalid source (must be LIBRARY or WISHLIST)` },
           { status: 400 }
@@ -258,8 +237,8 @@ export async function POST(request: NextRequest) {
       });
 
       // Count library vs wishlist
-      const libraryCount = body.titles.filter((t) => t.source === 'LIBRARY').length;
-      const wishlistCount = body.titles.filter((t) => t.source === 'WISHLIST').length;
+      const libraryCount = body.titles.filter((t) => t.source === "LIBRARY").length;
+      const wishlistCount = body.titles.filter((t) => t.source === "WISHLIST").length;
 
       // T037: Log sync history
       await tx.syncHistory.create({
@@ -294,29 +273,20 @@ export async function POST(request: NextRequest) {
     } as ImportResult);
   } catch (error) {
     // T039: Error handling
-    console.error('Import error:', error);
+    console.error("Import error:", error);
 
     if (error instanceof Error) {
       // Check for specific error types
-      if (error.message.includes('Payload') || error.message.includes('Invalid')) {
-        return NextResponse.json(
-          { error: error.message },
-          { status: 400 }
-        );
+      if (error.message.includes("Payload") || error.message.includes("Invalid")) {
+        return NextResponse.json({ error: error.message }, { status: 400 });
       }
 
-      if (error.message.includes('Token') || error.message.includes('Unauthorized')) {
-        return NextResponse.json(
-          { error: error.message },
-          { status: 401 }
-        );
+      if (error.message.includes("Token") || error.message.includes("Unauthorized")) {
+        return NextResponse.json({ error: error.message }, { status: 401 });
       }
     }
 
     // Generic server error
-    return NextResponse.json(
-      { error: 'Internal server error during import' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Internal server error during import" }, { status: 500 });
   }
 }

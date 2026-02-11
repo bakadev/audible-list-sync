@@ -24,7 +24,7 @@ export default async function DashboardPage() {
   const [lastSync, libraryStats, syncHistory] = await Promise.all([
     prisma.syncHistory.findFirst({
       where: { userId },
-      orderBy: { syncedAt: 'desc' },
+      orderBy: { syncedAt: "desc" },
     }),
     prisma.userLibrary.aggregate({
       where: { userId },
@@ -32,7 +32,7 @@ export default async function DashboardPage() {
     }),
     prisma.syncHistory.findMany({
       where: { userId },
-      orderBy: { syncedAt: 'desc' },
+      orderBy: { syncedAt: "desc" },
       take: 5,
     }),
   ]);
@@ -40,10 +40,10 @@ export default async function DashboardPage() {
   // Get library and wishlist counts
   const [libraryCount, wishlistCount] = await Promise.all([
     prisma.userLibrary.count({
-      where: { userId, source: 'LIBRARY' },
+      where: { userId, source: "LIBRARY" },
     }),
     prisma.userLibrary.count({
-      where: { userId, source: 'WISHLIST' },
+      where: { userId, source: "WISHLIST" },
     }),
   ]);
 
@@ -97,8 +97,8 @@ export default async function DashboardPage() {
                 <li>Return here to view your synced titles</li>
               </ol>
               <p className="text-xs text-muted-foreground pt-2">
-                Note: The browser extension is not yet available. This is the
-                website-side implementation only.
+                Note: The browser extension is not yet available. This is the website-side
+                implementation only.
               </p>
             </div>
           </Card>
@@ -108,7 +108,7 @@ export default async function DashboardPage() {
           <div className="space-y-4">
             <h2 className="text-2xl font-bold">Sync History</h2>
             <SyncHistoryTable
-              history={syncHistory.map(h => ({
+              history={syncHistory.map((h) => ({
                 id: h.id,
                 syncedAt: h.syncedAt.toISOString(),
                 titlesImported: h.titlesImported,

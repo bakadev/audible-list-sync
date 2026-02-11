@@ -41,13 +41,7 @@ export function TitleCard({
         {/* Cover Image */}
         <div className="relative h-40 w-28 shrink-0 overflow-hidden rounded-md bg-muted shadow-sm">
           {coverImageUrl ? (
-            <Image
-              src={coverImageUrl}
-              alt={title}
-              fill
-              className="object-cover"
-              sizes="96px"
-            />
+            <Image src={coverImageUrl} alt={title} fill className="object-cover" sizes="96px" />
           ) : (
             <div className="flex h-full items-center justify-center">
               <svg
@@ -77,9 +71,7 @@ export function TitleCard({
                 {source}
               </Badge>
             </div>
-            {subtitle && (
-              <p className="text-sm text-muted-foreground line-clamp-2">{subtitle}</p>
-            )}
+            {subtitle && <p className="text-sm text-muted-foreground line-clamp-2">{subtitle}</p>}
           </div>
 
           {authors.length > 0 && (

@@ -22,11 +22,12 @@ interface UserNavProps {
 }
 
 export function UserNav({ user }: UserNavProps) {
-  const initials = user.name
-    ?.split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase() || "U";
+  const initials =
+    user.name
+      ?.split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase() || "U";
 
   return (
     <div className="flex items-center gap-4">

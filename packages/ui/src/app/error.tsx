@@ -26,9 +26,7 @@ export default function Error({
             We&apos;re sorry, but something unexpected happened. Please try again.
           </p>
           {error.digest && (
-            <p className="text-xs text-muted-foreground">
-              Error ID: {error.digest}
-            </p>
+            <p className="text-xs text-muted-foreground">Error ID: {error.digest}</p>
           )}
         </div>
 

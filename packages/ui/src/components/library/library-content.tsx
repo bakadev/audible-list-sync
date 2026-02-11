@@ -124,9 +124,7 @@ export function LibraryContent() {
       )}
 
       {loading && items.length > 0 && (
-        <div className="text-center text-sm text-muted-foreground">
-          Loading...
-        </div>
+        <div className="text-center text-sm text-muted-foreground">Loading...</div>
       )}
     </div>
   );

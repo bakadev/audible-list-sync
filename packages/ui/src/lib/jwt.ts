@@ -1,13 +1,13 @@
-import jwt from 'jsonwebtoken';
-import { v4 as uuidv4 } from 'uuid';
+import jwt from "jsonwebtoken";
+import { v4 as uuidv4 } from "uuid";
 
-const JWT_SECRET = process.env.JWT_SECRET || 'fallback-secret-change-in-production';
-const TOKEN_EXPIRY = '15m'; // 15 minutes
+const JWT_SECRET = process.env.JWT_SECRET || "fallback-secret-change-in-production";
+const TOKEN_EXPIRY = "15m"; // 15 minutes
 
 export interface SyncTokenPayload {
   sub: string; // user ID
   jti: string; // JWT ID (unique identifier)
-  scope: 'sync:upload';
+  scope: "sync:upload";
   iat?: number;
   exp?: number;
 }
@@ -28,11 +28,11 @@ export function generateSyncToken(userId: string): {
   const payload: SyncTokenPayload = {
     sub: userId,
     jti,
-    scope: 'sync:upload',
+    scope: "sync:upload",
   };
 
   const token = jwt.sign(payload, JWT_SECRET, {
-    algorithm: 'HS256',
+    algorithm: "HS256",
     expiresIn: TOKEN_EXPIRY,
   });
 
@@ -48,21 +48,21 @@ export function generateSyncToken(userId: string): {
 export function verifySyncToken(token: string): SyncTokenPayload {
   try {
     const decoded = jwt.verify(token, JWT_SECRET, {
-      algorithms: ['HS256'],
+      algorithms: ["HS256"],
     }) as SyncTokenPayload;
 
     // Verify scope
-    if (decoded.scope !== 'sync:upload') {
-      throw new Error('Invalid token scope');
+    if (decoded.scope !== "sync:upload") {
+      throw new Error("Invalid token scope");
     }
 
     return decoded;
   } catch (error) {
     if (error instanceof jwt.TokenExpiredError) {
-      throw new Error('Token expired');
+      throw new Error("Token expired");
     }
     if (error instanceof jwt.JsonWebTokenError) {
-      throw new Error('Invalid token');
+      throw new Error("Invalid token");
     }
     throw error;
   }
@@ -76,8 +76,8 @@ export function verifySyncToken(token: string): SyncTokenPayload {
 export function extractBearerToken(authHeader: string | null): string | null {
   if (!authHeader) return null;
 
-  const parts = authHeader.split(' ');
-  if (parts.length !== 2 || parts[0] !== 'Bearer') {
+  const parts = authHeader.split(" ");
+  if (parts.length !== 2 || parts[0] !== "Bearer") {
     return null;
   }
 

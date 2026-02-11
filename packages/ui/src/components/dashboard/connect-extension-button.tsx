@@ -8,9 +8,7 @@ interface ConnectExtensionButtonProps {
   hasSyncedBefore: boolean;
 }
 
-export function ConnectExtensionButton({
-  hasSyncedBefore,
-}: ConnectExtensionButtonProps) {
+export function ConnectExtensionButton({ hasSyncedBefore }: ConnectExtensionButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,11 +40,10 @@ export function ConnectExtensionButton({
         hasSyncedBefore
           ? "Sync token generated! Opening Audible..."
           : "Connection ready! Opening Audible..."
-      )
+      );
     } catch (err) {
       console.error("Error connecting extension:", err);
-      const errorMessage =
-        err instanceof Error ? err.message : "Failed to connect extension";
+      const errorMessage = err instanceof Error ? err.message : "Failed to connect extension";
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
@@ -56,12 +53,7 @@ export function ConnectExtensionButton({
 
   return (
     <div className="space-y-3">
-      <Button
-        onClick={handleConnect}
-        disabled={isLoading}
-        size="lg"
-        className="w-full"
-      >
+      <Button onClick={handleConnect} disabled={isLoading} size="lg" className="w-full">
         {isLoading ? (
           <>
             <svg
@@ -93,9 +85,7 @@ export function ConnectExtensionButton({
         )}
       </Button>
 
-      {error && (
-        <p className="text-sm text-destructive text-center">{error}</p>
-      )}
+      {error && <p className="text-sm text-destructive text-center">{error}</p>}
 
       {!error && !isLoading && (
         <p className="text-xs text-muted-foreground text-center">

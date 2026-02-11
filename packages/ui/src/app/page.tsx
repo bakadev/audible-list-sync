@@ -1,24 +1,25 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Container } from "@/components/ui/container";
 
 export default function Home() {
   return (
     <div className="flex min-h-screen flex-col">
       {/* Hero Section */}
-      <section className="flex flex-1 flex-col items-center justify-center py-16 md:py-24 lg:py-32">
-        <div className="container max-w-4xl space-y-8 px-4">
+      <section>
+        <Container className="py-16 md:py-24 lg:py-32 max-w-4xl space-y-8 px-4">
           <div className="space-y-6 text-center">
             <div className="inline-flex items-center rounded-full border bg-muted px-3 py-1 text-xs">
               <span className="mr-2">✨</span>
               <span>Sync, browse, and organize your audiobooks</span>
             </div>
             <h1 className="text-4xl font-bold leading-tight tracking-tight sm:text-5xl md:text-6xl md:leading-[1.2]">
-              The perfect place for{" "}
-              <span className="text-primary">Audible listeners</span>
+              The perfect place for <span className="text-primary">Audible listeners</span>
             </h1>
             <p className="mx-auto max-w-2xl text-lg text-muted-foreground sm:text-xl">
-              Sync your Audible library, search your collection, and create recommendation lists to share with fellow audiobook enthusiasts.
+              Sync your Audible library, search your collection, and create recommendation lists to
+              share with fellow audiobook enthusiasts.
             </p>
           </div>
           <div className="flex flex-col gap-4 sm:flex-row sm:justify-center">
@@ -26,12 +27,12 @@ export default function Home() {
               <Link href="/signin">Get Started with Google</Link>
             </Button>
           </div>
-        </div>
+        </Container>
       </section>
 
       {/* Features Section */}
       <section className="border-t bg-muted/50 py-16 md:py-24">
-        <div className="container max-w-6xl px-4">
+        <Container>
           <h2 className="mb-12 text-center text-2xl font-bold md:text-3xl">Features</h2>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             <Card className="p-6">
@@ -54,7 +55,8 @@ export default function Home() {
                 </div>
                 <h3 className="text-xl font-semibold">Sync Your Library</h3>
                 <p className="text-sm text-muted-foreground">
-                  Securely sync your Audible library and wishlist with one click. Keep your collection up to date.
+                  Securely sync your Audible library and wishlist with one click. Keep your
+                  collection up to date.
                 </p>
               </div>
             </Card>
@@ -79,7 +81,8 @@ export default function Home() {
                 </div>
                 <h3 className="text-xl font-semibold">Browse & Search</h3>
                 <p className="text-sm text-muted-foreground">
-                  Easily search through your entire collection. Filter by title, author, narrator, and more.
+                  Easily search through your entire collection. Filter by title, author, narrator,
+                  and more.
                 </p>
               </div>
             </Card>
@@ -104,17 +107,18 @@ export default function Home() {
                 </div>
                 <h3 className="text-xl font-semibold">Curate Lists</h3>
                 <p className="text-sm text-muted-foreground">
-                  Create recommendation lists and tier lists to organize and share your favorite audiobooks.
+                  Create recommendation lists and tier lists to organize and share your favorite
+                  audiobooks.
                 </p>
               </div>
             </Card>
           </div>
-        </div>
+        </Container>
       </section>
 
       {/* How It Works Section */}
       <section className="py-16 md:py-24">
-        <div className="container max-w-4xl px-4">
+        <Container>
           <h2 className="mb-12 text-center text-2xl font-bold md:text-3xl">How It Works</h2>
           <div className="space-y-8">
             <div className="flex gap-6">
@@ -136,7 +140,8 @@ export default function Home() {
               <div className="space-y-2">
                 <h3 className="text-xl font-semibold">Connect Your Library</h3>
                 <p className="text-sm text-muted-foreground">
-                  Install our browser extension and sync your Audible library. We only read your public library data.
+                  Install our browser extension and sync your Audible library. We only read your
+                  public library data.
                 </p>
               </div>
             </div>
@@ -148,21 +153,20 @@ export default function Home() {
               <div className="space-y-2">
                 <h3 className="text-xl font-semibold">Browse and Organize</h3>
                 <p className="text-sm text-muted-foreground">
-                  Search your collection, track your progress, and create lists to share with others.
+                  Search your collection, track your progress, and create lists to share with
+                  others.
                 </p>
               </div>
             </div>
           </div>
-        </div>
+        </Container>
       </section>
 
       {/* Footer */}
       <footer className="border-t py-8 text-center text-sm text-muted-foreground">
-        <div className="container">
-          <p>
-            Your data is private and secure. We never access your Audible credentials.
-          </p>
-        </div>
+        <Container>
+          <p>Your data is private and secure. We never access your Audible credentials.</p>
+        </Container>
       </footer>
     </div>
   );

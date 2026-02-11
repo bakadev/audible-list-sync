@@ -19,9 +19,7 @@ export default async function SignInPage({
       <div className="space-y-6">
         <div className="space-y-2 text-center">
           <h1 className="text-3xl font-bold">Welcome to Audible Lists</h1>
-          <p className="text-muted-foreground">
-            Sign in with your Google account to get started
-          </p>
+          <p className="text-muted-foreground">Sign in with your Google account to get started</p>
         </div>
 
         {params.error && (
@@ -31,10 +29,10 @@ export default async function SignInPage({
               {params.error === "OAuthSignin"
                 ? "Error starting the sign-in process. Please try again."
                 : params.error === "OAuthCallback"
-                ? "Error during sign-in callback. Please try again."
-                : params.error === "OAuthAccountNotLinked"
-                ? "This email is already associated with another account."
-                : "An error occurred during sign-in. Please try again."}
+                  ? "Error during sign-in callback. Please try again."
+                  : params.error === "OAuthAccountNotLinked"
+                    ? "This email is already associated with another account."
+                    : "An error occurred during sign-in. Please try again."}
             </p>
           </div>
         )}

@@ -30,9 +30,7 @@ export function SyncStatus({
     return {
       label: "Connected",
       variant: "default" as const,
-      description: syncDate
-        ? `Last synced ${formatTimeAgo(syncDate)}`
-        : "Library synced",
+      description: syncDate ? `Last synced ${formatTimeAgo(syncDate)}` : "Library synced",
     };
   };
 

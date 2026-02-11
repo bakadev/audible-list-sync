@@ -29,12 +29,12 @@ interface SyncHistoryTableProps {
 export function SyncHistoryTable({ history }: SyncHistoryTableProps) {
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return new Intl.DateTimeFormat('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
+    return new Intl.DateTimeFormat("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
     }).format(date);
   };
 
@@ -63,21 +63,11 @@ export function SyncHistoryTable({ history }: SyncHistoryTableProps) {
         <TableBody>
           {history.map((event) => (
             <TableRow key={event.id}>
-              <TableCell className="font-medium">
-                {formatDate(event.syncedAt)}
-              </TableCell>
-              <TableCell className="text-right">
-                {event.titlesImported}
-              </TableCell>
-              <TableCell className="text-right">
-                {event.newToCatalog}
-              </TableCell>
-              <TableCell className="text-right">
-                {event.libraryCount}
-              </TableCell>
-              <TableCell className="text-right">
-                {event.wishlistCount}
-              </TableCell>
+              <TableCell className="font-medium">{formatDate(event.syncedAt)}</TableCell>
+              <TableCell className="text-right">{event.titlesImported}</TableCell>
+              <TableCell className="text-right">{event.newToCatalog}</TableCell>
+              <TableCell className="text-right">{event.libraryCount}</TableCell>
+              <TableCell className="text-right">{event.wishlistCount}</TableCell>
               <TableCell>
                 <div className="flex items-center gap-2">
                   <Badge variant={event.success ? "default" : "destructive"}>
@@ -85,7 +75,7 @@ export function SyncHistoryTable({ history }: SyncHistoryTableProps) {
                   </Badge>
                   {event.warnings.length > 0 && (
                     <Badge variant="outline" className="text-xs">
-                      {event.warnings.length} warning{event.warnings.length > 1 ? 's' : ''}
+                      {event.warnings.length} warning{event.warnings.length > 1 ? "s" : ""}
                     </Badge>
                   )}
                 </div>

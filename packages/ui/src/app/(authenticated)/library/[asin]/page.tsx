@@ -64,10 +64,10 @@ export default async function TitleDetailPage({ params }: TitleDetailPageProps) 
 
   const formatDate = (date: Date | null) => {
     if (!date) return null;
-    return new Intl.DateTimeFormat('en-US', {
-      month: 'long',
-      day: 'numeric',
-      year: 'numeric',
+    return new Intl.DateTimeFormat("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
     }).format(date);
   };
 
@@ -85,9 +85,7 @@ export default async function TitleDetailPage({ params }: TitleDetailPageProps) 
       <div
         className="relative aspect-banner max-h-[55dvh] overflow-hidden border-b bg-muted md:rounded-lg lg:border"
         style={{
-          backgroundImage: title.coverImageUrl
-            ? `url(${title.coverImageUrl})`
-            : undefined,
+          backgroundImage: title.coverImageUrl ? `url(${title.coverImageUrl})` : undefined,
           backgroundSize: "cover",
           backgroundPosition: "center",
           filter: title.coverImageUrl ? "blur(20px) brightness(40%)" : undefined,
@@ -152,15 +150,11 @@ export default async function TitleDetailPage({ params }: TitleDetailPageProps) 
         <div className="flex w-3/5 flex-col gap-2 md:w-2/3">
           {/* Release Date */}
           {title.releaseDate && (
-            <p className="text-xs text-muted-foreground">
-              {formatDate(title.releaseDate)}
-            </p>
+            <p className="text-xs text-muted-foreground">{formatDate(title.releaseDate)}</p>
           )}
 
           {/* Title */}
-          <h1 className="text-lg font-bold leading-tight md:text-4xl">
-            {title.title}
-          </h1>
+          <h1 className="text-lg font-bold leading-tight md:text-4xl">{title.title}</h1>
 
           {/* Genre/Category Badges */}
           {title.categories.length > 0 && (

@@ -121,17 +121,11 @@ export function FloatingNav({ user }: FloatingNavProps) {
                 const Icon = item.icon;
                 const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
                 return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => setMobileMenuOpen(false)}
-                  >
+                  <Link key={item.href} href={item.href} onClick={() => setMobileMenuOpen(false)}>
                     <Button
                       variant="ghost"
                       size="sm"
-                      className={`w-full justify-start gap-2 ${
-                        isActive ? "bg-muted" : ""
-                      }`}
+                      className={`w-full justify-start gap-2 ${isActive ? "bg-muted" : ""}`}
                     >
                       <Icon width="12" height="12" />
                       {item.label}

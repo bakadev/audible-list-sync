@@ -87,11 +87,7 @@ export function AppHeader({ user }: AppHeaderProps) {
         <div className="border-t md:hidden">
           <nav className="container flex flex-col gap-2 py-4">
             {navItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setMobileMenuOpen(false)}
-              >
+              <Link key={item.href} href={item.href} onClick={() => setMobileMenuOpen(false)}>
                 <Button
                   variant={pathname === item.href ? "default" : "ghost"}
                   size="sm"

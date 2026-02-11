@@ -19,7 +19,8 @@ export const metadata: Metadata = {
     default: "Audible Lists - Organize & Share Your Audiobook Library",
     template: "%s | Audible Lists",
   },
-  description: "Sync your Audible library, browse your audiobook collection, and create recommendation lists to share with friends.",
+  description:
+    "Sync your Audible library, browse your audiobook collection, and create recommendation lists to share with friends.",
   keywords: ["audible", "audiobooks", "library", "lists", "recommendations", "book tracker"],
   authors: [{ name: "Audible Lists" }],
   openGraph: {
@@ -27,13 +28,15 @@ export const metadata: Metadata = {
     locale: "en_US",
     url: "https://audiblelists.com",
     title: "Audible Lists - Organize & Share Your Audiobook Library",
-    description: "Sync your Audible library, browse your audiobook collection, and create recommendation lists to share with friends.",
+    description:
+      "Sync your Audible library, browse your audiobook collection, and create recommendation lists to share with friends.",
     siteName: "Audible Lists",
   },
   twitter: {
     card: "summary_large_image",
     title: "Audible Lists - Organize & Share Your Audiobook Library",
-    description: "Sync your Audible library, browse your audiobook collection, and create recommendation lists to share with friends.",
+    description:
+      "Sync your Audible library, browse your audiobook collection, and create recommendation lists to share with friends.",
   },
 };
 
@@ -44,9 +47,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"

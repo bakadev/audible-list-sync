@@ -1,16 +1,13 @@
-import { NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
-import prisma from '@/lib/prisma';
+import { NextResponse } from "next/server";
+import { auth } from "@/lib/auth";
+import prisma from "@/lib/prisma";
 
 export async function GET() {
   try {
     // Check authentication
     const session = await auth();
     if (!session?.user?.id) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      );
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const userId = session.user.id;
@@ -21,14 +18,14 @@ export async function GET() {
         where: { userId },
       }),
       prisma.userLibrary.count({
-        where: { userId, source: 'LIBRARY' },
+        where: { userId, source: "LIBRARY" },
       }),
       prisma.userLibrary.count({
-        where: { userId, source: 'WISHLIST' },
+        where: { userId, source: "WISHLIST" },
       }),
       prisma.syncHistory.findFirst({
         where: { userId },
-        orderBy: { syncedAt: 'desc' },
+        orderBy: { syncedAt: "desc" },
         select: { syncedAt: true },
       }),
       prisma.userLibrary.findMany({
@@ -38,10 +35,7 @@ export async function GET() {
     ]);
 
     // Calculate total duration in minutes
-    const totalDuration = durationSum.reduce(
-      (sum, item) => sum + (item.title.duration || 0),
-      0
-    );
+    const totalDuration = durationSum.reduce((sum, item) => sum + (item.title.duration || 0), 0);
 
     return NextResponse.json({
       total: totalCount,
@@ -51,10 +45,7 @@ export async function GET() {
       lastSync: lastSync?.syncedAt?.toISOString() || null,
     });
   } catch (error) {
-    console.error('Error fetching library stats:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch library stats' },
-      { status: 500 }
-    );
+    console.error("Error fetching library stats:", error);
+    return NextResponse.json({ error: "Failed to fetch library stats" }, { status: 500 });
   }
 }

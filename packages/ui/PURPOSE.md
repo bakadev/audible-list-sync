@@ -7,16 +7,19 @@ The core web application that serves as the platform's frontend and backend. Thi
 ## Responsibilities
 
 ### Authentication & User Management
+
 - Google OAuth authentication via Auth.js (NextAuth)
 - User session management
 - Account creation and profile display
 
 ### Sync Token Generation
+
 - Generate short-lived JWT tokens for extension connection
 - Track token usage and expiration in database
 - Provide "Connect extension" flow that opens Audible with token in URL
 
 ### Library Import API
+
 - Accept JSON payloads from browser extension
 - Validate sync tokens (JWT authentication)
 - Process audiobook metadata into normalized database
@@ -24,12 +27,14 @@ The core web application that serves as the platform's frontend and backend. Thi
 - Log sync events for audit trail
 
 ### Library Browsing
+
 - Display user's synced audiobook library
 - Real-time search by title, author, or narrator
 - Show cover art, metadata, listening progress
 - Empty state for users without synced data
 
 ### Dashboard
+
 - Display sync history (last 5 events)
 - Show library statistics (total count, library vs wishlist breakdown)
 - Provide re-sync functionality
@@ -78,13 +83,13 @@ packages/ui/
 
 ## Key Interactions
 
-| Action | Direction | Description |
-|--------|-----------|-------------|
-| OAuth Login | User → Website | Google OAuth authentication flow |
-| Generate Token | Dashboard → API | POST /api/sync/token creates JWT |
-| Import Data | Extension → API | POST /api/sync/import with JWT + payload |
-| Browse Library | User → Website | View synced titles, search/filter |
-| View History | Dashboard → API | GET /api/sync/history shows sync events |
+| Action         | Direction       | Description                              |
+| -------------- | --------------- | ---------------------------------------- |
+| OAuth Login    | User → Website  | Google OAuth authentication flow         |
+| Generate Token | Dashboard → API | POST /api/sync/token creates JWT         |
+| Import Data    | Extension → API | POST /api/sync/import with JWT + payload |
+| Browse Library | User → Website  | View synced titles, search/filter        |
+| View History   | Dashboard → API | GET /api/sync/history shows sync events  |
 
 ## Data Flow
 
@@ -139,14 +144,17 @@ User browses library on /library page
 ## API Endpoints
 
 ### Authentication
+
 - `POST /api/auth/[...nextauth]` - NextAuth OAuth flow (managed by Auth.js)
 
 ### Sync Operations
+
 - `POST /api/sync/token` - Generate sync token (requires auth)
 - `POST /api/sync/import` - Import library data (requires JWT)
 - `GET /api/sync/history` - Fetch sync history (requires auth)
 
 ### Library Queries
+
 - `GET /api/library` - Query user library (requires auth, supports search param)
 - `GET /api/library/stats` - Library statistics (requires auth)
 

@@ -105,14 +105,8 @@ export function TitlePosterCard({
           <h3 className="line-clamp-2 text-sm font-medium leading-tight transition-colors group-hover:text-primary">
             {title}
           </h3>
-          <p className="line-clamp-1 text-xs text-muted-foreground">
-            {authors.join(", ")}
-          </p>
-          {duration && (
-            <p className="text-xs text-muted-foreground">
-              {formatDuration(duration)}
-            </p>
-          )}
+          <p className="line-clamp-1 text-xs text-muted-foreground">{authors.join(", ")}</p>
+          {duration && <p className="text-xs text-muted-foreground">{formatDuration(duration)}</p>}
         </div>
       </div>
     </Link>
