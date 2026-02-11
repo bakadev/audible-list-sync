@@ -114,14 +114,14 @@
 
 ### Implementation for User Story 4
 
-- [ ] T040 [P] [US4] Create GET /api/library route in packages/ui/src/app/api/library/route.ts that queries UserLibrary with title relations, supports search query param (title/author/narrator filter), returns paginated results
-- [ ] T041 [P] [US4] Create GET /api/library/stats route in packages/ui/src/app/api/library/stats/route.ts that returns aggregate counts (total, library, wishlist, total duration, last sync)
-- [ ] T042 [US4] Create library page in packages/ui/src/app/library/page.tsx (protected route) with title list and search bar
-- [ ] T043 [P] [US4] Create TitleCard component in packages/ui/src/components/library/title-card.tsx displaying cover, title, authors, narrators, duration, progress bar, library/wishlist badge
-- [ ] T044 [P] [US4] Create SearchBar component in packages/ui/src/components/library/search-bar.tsx with real-time filtering (debounced input)
-- [ ] T045 [P] [US4] Create EmptyState component in packages/ui/src/components/library/empty-state.tsx with "No titles yet" message and link to dashboard
-- [ ] T046 [US4] Implement client-side search logic in library page: fetch /api/library with search query param, update UI with results, show loading state
-- [ ] T047 [US4] Implement empty state handling: if no synced data, show EmptyState component instead of title list
+- [x] T040 [P] [US4] Create GET /api/library route in packages/ui/src/app/api/library/route.ts that queries UserLibrary with title relations, supports search query param (title/author/narrator filter), returns paginated results
+- [x] T041 [P] [US4] Create GET /api/library/stats route in packages/ui/src/app/api/library/stats/route.ts that returns aggregate counts (total, library, wishlist, total duration, last sync)
+- [x] T042 [US4] Create library page in packages/ui/src/app/library/page.tsx (protected route) with title list and search bar
+- [x] T043 [P] [US4] Create TitleCard component in packages/ui/src/components/library/title-card.tsx displaying cover, title, authors, narrators, duration, progress bar, library/wishlist badge
+- [x] T044 [P] [US4] Create SearchBar component in packages/ui/src/components/library/search-bar.tsx with real-time filtering (debounced input)
+- [x] T045 [P] [US4] Create EmptyState component in packages/ui/src/components/library/empty-state.tsx with "No titles yet" message and link to dashboard
+- [x] T046 [US4] Implement client-side search logic in library page: fetch /api/library with search query param, update UI with results, show loading state
+- [x] T047 [US4] Implement empty state handling: if no synced data, show EmptyState component instead of title list
 
 **Checkpoint**: Library page displays titles, search works, empty state handled
 
