@@ -14,7 +14,7 @@ import prisma from '@/lib/prisma'
 
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { userId: string } }
+  { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
     // T083: Authentication and admin role check
@@ -30,7 +30,7 @@ export async function DELETE(
 
     requireAdmin(adminUser)
 
-    const { userId } = params
+    const { userId } = await params
 
     // T084: Validate confirmation query param
     // T087: Return 400 Bad Request if confirmation missing

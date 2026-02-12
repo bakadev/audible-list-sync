@@ -38,10 +38,11 @@ export default async function UserDetailPage({
   params,
   searchParams,
 }: {
-  params: { userId: string }
-  searchParams: { [key: string]: string | string[] | undefined }
+  params: Promise<{ userId: string }>
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
-  const data = await getUserDetails(params.userId)
+  const { userId } = await params
+  const data = await getUserDetails(userId)
   const { user, summary } = data
 
   return (
@@ -142,11 +143,11 @@ export default async function UserDetailPage({
           </div>
         }
       >
-        <UserLibraryTable userId={params.userId} searchParams={searchParams} />
+        <UserLibraryTable userId={userId} searchParams={searchParams} />
       </Suspense>
 
       {/* Danger Zone */}
-      <DangerZone userId={params.userId} userEmail={user.email} />
+      <DangerZone userId={userId} userEmail={user.email} />
     </div>
   )
 }

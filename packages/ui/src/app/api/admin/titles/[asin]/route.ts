@@ -14,7 +14,7 @@ import prisma from '@/lib/prisma'
 // T117: GET Title Details
 export async function GET(
   req: NextRequest,
-  { params }: { params: { asin: string } }
+  { params }: { params: Promise<{ asin: string }> }
 ) {
   try {
     // T118: Authentication and admin role check
@@ -30,7 +30,7 @@ export async function GET(
 
     requireAdmin(user)
 
-    const { asin } = params
+    const { asin } = await params
 
     // T119: Fetch title by ASIN with 404 if not found
     // T120: Include all relations
@@ -160,7 +160,7 @@ export async function GET(
 // T123: PUT Update Title
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { asin: string } }
+  { params }: { params: Promise<{ asin: string }> }
 ) {
   try {
     // T124: Authentication and admin role check
@@ -176,7 +176,7 @@ export async function PUT(
 
     requireAdmin(user)
 
-    const { asin } = params
+    const { asin } = await params
 
     // T125: Validate request body
     const body = await req.json()

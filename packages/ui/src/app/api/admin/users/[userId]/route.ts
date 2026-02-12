@@ -16,7 +16,7 @@ import prisma from '@/lib/prisma'
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { userId: string } }
+  { params }: { params: Promise<{ userId: string }> }
 ) {
   try {
     // T074: Authentication and admin role check
@@ -32,7 +32,7 @@ export async function GET(
 
     requireAdmin(adminUser)
 
-    const { userId } = params
+    const { userId } = await params
 
     // T075: Fetch user by userId with 404 if not found
     const user = await prisma.user.findUnique({

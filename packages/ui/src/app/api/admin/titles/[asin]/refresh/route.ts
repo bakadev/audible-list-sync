@@ -13,7 +13,7 @@ import { fetchTitleMetadata } from '@/lib/audnex'
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { asin: string } }
+  { params }: { params: Promise<{ asin: string }> }
 ) {
   try {
     // T130: Authentication and admin role check
@@ -29,7 +29,7 @@ export async function POST(
 
     requireAdmin(user)
 
-    const { asin } = params
+    const { asin } = await params
 
     // Verify title exists
     const existingTitle = await prisma.title.findUnique({
