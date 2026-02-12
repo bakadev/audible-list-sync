@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { UserNav } from "@/components/dashboard/user-nav";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
-import { Menu, Home, Library } from "lucide-react";
+import { Menu, Home, Library, Settings } from "lucide-react";
 
 interface FloatingNavProps {
   user: {
@@ -14,9 +14,10 @@ interface FloatingNavProps {
     email?: string | null;
     image?: string | null;
   };
+  isAdmin?: boolean;
 }
 
-export function FloatingNav({ user }: FloatingNavProps) {
+export function FloatingNav({ user, isAdmin = false }: FloatingNavProps) {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -74,6 +75,18 @@ export function FloatingNav({ user }: FloatingNavProps) {
 
           <div className="flex items-center gap-2">
             <ThemeToggle />
+            {isAdmin && (
+              <Link href="/admin">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-9 w-9"
+                  title="Admin Dashboard"
+                >
+                  <Settings className="h-4 w-4" />
+                </Button>
+              </Link>
+            )}
             <UserNav user={user} />
           </div>
         </div>
@@ -103,6 +116,18 @@ export function FloatingNav({ user }: FloatingNavProps) {
 
           <div className="flex items-center gap-2">
             <ThemeToggle />
+            {isAdmin && (
+              <Link href="/admin">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  className="h-9 w-9"
+                  title="Admin Dashboard"
+                >
+                  <Settings className="h-4 w-4" />
+                </Button>
+              </Link>
+            )}
             <Button
               variant="outline"
               size="icon"

@@ -12,7 +12,7 @@ export default async function AuthenticatedLayout({ children }: { children: Reac
 
   return (
     <Container className="flex min-h-screen flex-col">
-      <FloatingNav user={session.user} />
+      <FloatingNav user={session.user} isAdmin={session.user.isAdmin || false} />
       <main className="flex-1">{children}</main>
       <Footer />
     </Container>
