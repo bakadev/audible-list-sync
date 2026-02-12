@@ -8,19 +8,27 @@
  */
 
 import { Suspense } from 'react'
+import { cookies } from 'next/headers'
 import UserLibraryTable from '@/components/admin/user-library-table'
 import DangerZone from '@/components/admin/danger-zone'
 
 async function getUserDetails(userId: string) {
+  const cookieStore = await cookies()
+  const cookieHeader = cookieStore.toString()
+
   const response = await fetch(
     `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/api/admin/users/${userId}`,
     {
       cache: 'no-store',
+      headers: {
+        Cookie: cookieHeader,
+      },
     }
   )
 
   if (!response.ok) {
-    throw new Error('Failed to fetch user details')
+    const errorText = await response.text()
+    throw new Error(`Failed to fetch user details: ${response.status} - ${errorText}`)
   }
 
   return response.json()
