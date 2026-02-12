@@ -26,7 +26,7 @@ export default async function DashboardPage() {
       where: { userId },
       orderBy: { syncedAt: "desc" },
     }),
-    prisma.userLibrary.aggregate({
+    prisma.libraryEntry.aggregate({
       where: { userId },
       _count: { id: true },
     }),
@@ -39,10 +39,10 @@ export default async function DashboardPage() {
 
   // Get library and wishlist counts
   const [libraryCount, wishlistCount] = await Promise.all([
-    prisma.userLibrary.count({
+    prisma.libraryEntry.count({
       where: { userId, source: "LIBRARY" },
     }),
-    prisma.userLibrary.count({
+    prisma.libraryEntry.count({
       where: { userId, source: "WISHLIST" },
     }),
   ]);

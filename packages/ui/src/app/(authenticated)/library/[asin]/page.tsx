@@ -16,8 +16,15 @@ interface TitleDetailPageProps {
 export async function generateMetadata({ params }: TitleDetailPageProps): Promise<Metadata> {
   const { asin } = await params;
 
-  const title = await prisma.titleCatalog.findUnique({
+  const title = await prisma.title.findUnique({
     where: { asin },
+    include: {
+      authors: {
+        include: {
+          author: true,
+        },
+      },
+    },
   });
 
   if (!title) {
@@ -26,9 +33,10 @@ export async function generateMetadata({ params }: TitleDetailPageProps): Promis
     };
   }
 
+  const authorNames = title.authors.map((a) => a.author.name);
   return {
     title: title.title,
-    description: title.summary || `${title.title} by ${title.authors.join(", ")}`,
+    description: title.summary || `${title.title} by ${authorNames.join(", ")}`,
   };
 }
 
@@ -40,18 +48,36 @@ export default async function TitleDetailPage({ params }: TitleDetailPageProps) 
     return null;
   }
 
-  const title = await prisma.titleCatalog.findUnique({
+  const title = await prisma.title.findUnique({
     where: { asin },
+    include: {
+      authors: {
+        include: {
+          author: true,
+        },
+      },
+      narrators: {
+        include: {
+          narrator: true,
+        },
+      },
+      genres: {
+        include: {
+          genre: true,
+        },
+      },
+      series: true,
+    },
   });
 
   if (!title) {
     notFound();
   }
 
-  const userLibraryEntry = await prisma.userLibrary.findFirst({
+  const userLibraryEntry = await prisma.libraryEntry.findFirst({
     where: {
       userId: session.user.id,
-      titleId: title.id,
+      titleAsin: asin,
     },
   });
 
@@ -85,13 +111,13 @@ export default async function TitleDetailPage({ params }: TitleDetailPageProps) 
       <div
         className="relative aspect-banner max-h-[55dvh] overflow-hidden border-b bg-muted md:rounded-lg lg:border"
         style={{
-          backgroundImage: title.coverImageUrl ? `url(${title.coverImageUrl})` : undefined,
+          backgroundImage: title.image ? `url(${title.image})` : undefined,
           backgroundSize: "cover",
           backgroundPosition: "center",
-          filter: title.coverImageUrl ? "blur(20px) brightness(40%)" : undefined,
+          filter: title.image ? "blur(20px) brightness(40%)" : undefined,
         }}
       >
-        {!title.coverImageUrl && (
+        {!title.image && (
           <div className="flex h-full items-center justify-center">
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -116,9 +142,9 @@ export default async function TitleDetailPage({ params }: TitleDetailPageProps) 
         {/* Poster (pulls up into banner) */}
         <div className="-mt-20 w-2/5 md:w-1/3 lg:-mt-32">
           <div className="relative aspect-poster overflow-hidden rounded-lg border bg-muted shadow">
-            {title.coverImageUrl ? (
+            {title.image ? (
               <Image
-                src={title.coverImageUrl}
+                src={title.image}
                 alt={title.title}
                 fill
                 className="object-cover"
@@ -157,15 +183,15 @@ export default async function TitleDetailPage({ params }: TitleDetailPageProps) 
           <h1 className="text-lg font-bold leading-tight md:text-4xl">{title.title}</h1>
 
           {/* Genre/Category Badges */}
-          {title.categories.length > 0 && (
+          {title.genres.length > 0 && (
             <div className="flex flex-wrap gap-2">
-              {title.categories.map((category) => (
+              {title.genres.map((g) => (
                 <Badge
-                  key={category}
+                  key={g.genre.asin}
                   variant="outline"
                   className="rounded-md border px-2.5 py-0.5 text-xs font-semibold"
                 >
-                  {category}
+                  {g.genre.name}
                 </Badge>
               ))}
             </div>
@@ -175,7 +201,7 @@ export default async function TitleDetailPage({ params }: TitleDetailPageProps) 
           {title.rating && (
             <div>
               <Badge className="rounded-md border-transparent bg-primary px-2.5 py-0.5 text-xs font-semibold text-primary-foreground shadow">
-                ⭐ {title.rating.toFixed(1)}
+                ⭐ {title.rating}
               </Badge>
             </div>
           )}
@@ -226,25 +252,25 @@ export default async function TitleDetailPage({ params }: TitleDetailPageProps) 
             {title.authors.length > 0 && (
               <div className="flex gap-2 text-sm">
                 <span className="font-medium text-muted-foreground">Authors:</span>
-                <span>{title.authors.join(", ")}</span>
+                <span>{title.authors.map(a => a.author.name).join(", ")}</span>
               </div>
             )}
             {title.narrators.length > 0 && (
               <div className="flex gap-2 text-sm">
                 <span className="font-medium text-muted-foreground">Narrated by:</span>
-                <span>{title.narrators.join(", ")}</span>
+                <span>{title.narrators.map(n => n.narrator.name).join(", ")}</span>
               </div>
             )}
-            {title.duration && (
+            {title.runtimeLengthMin && (
               <div className="flex gap-2 text-sm">
                 <span className="font-medium text-muted-foreground">Length:</span>
-                <span>{formatDuration(title.duration)}</span>
+                <span>{formatDuration(title.runtimeLengthMin)}</span>
               </div>
             )}
-            {title.publisher && (
+            {title.publisherName && (
               <div className="flex gap-2 text-sm">
                 <span className="font-medium text-muted-foreground">Publisher:</span>
-                <span>{title.publisher}</span>
+                <span>{title.publisherName}</span>
               </div>
             )}
             {title.language && (
@@ -259,18 +285,18 @@ export default async function TitleDetailPage({ params }: TitleDetailPageProps) 
         {userLibraryEntry && (
           <TabsContent value="progress" className="mt-4">
             <div className="space-y-4 rounded-lg border bg-card p-4">
-              {userLibraryEntry.listeningProgress > 0 ? (
+              {userLibraryEntry.progress > 0 ? (
                 <div className="space-y-2">
                   <div className="flex items-center justify-between text-sm">
                     <span className="font-medium">Listening Progress</span>
                     <span className="text-muted-foreground">
-                      {userLibraryEntry.listeningProgress}%
+                      {userLibraryEntry.progress}%
                     </span>
                   </div>
                   <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
                     <div
                       className="h-full bg-primary transition-all"
-                      style={{ width: `${userLibraryEntry.listeningProgress}%` }}
+                      style={{ width: `${userLibraryEntry.progress}%` }}
                     />
                   </div>
                 </div>

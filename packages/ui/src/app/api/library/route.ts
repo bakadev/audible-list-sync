@@ -20,31 +20,52 @@ export async function GET(request: NextRequest) {
     // Build search filter
     const searchFilter = search
       ? {
-          OR: [
-            { title: { title: { contains: search, mode: "insensitive" as const } } },
-            { title: { authors: { hasSome: [search] } } },
-            { title: { narrators: { hasSome: [search] } } },
-          ],
+          title: {
+            OR: [
+              { title: { contains: search, mode: "insensitive" as const } },
+              { authors: { some: { author: { name: { contains: search, mode: "insensitive" as const } } } } },
+              { narrators: { some: { narrator: { name: { contains: search, mode: "insensitive" as const } } } } },
+            ],
+          },
         }
       : {};
 
     // Query user library with title relations
     const [items, total] = await Promise.all([
-      prisma.userLibrary.findMany({
+      prisma.libraryEntry.findMany({
         where: {
           userId,
           ...searchFilter,
         },
         include: {
-          title: true,
+          title: {
+            include: {
+              authors: {
+                include: {
+                  author: true,
+                },
+              },
+              narrators: {
+                include: {
+                  narrator: true,
+                },
+              },
+              genres: {
+                include: {
+                  genre: true,
+                },
+              },
+              series: true,
+            },
+          },
         },
         orderBy: {
-          dateAdded: "desc",
+          updatedAt: "desc",
         },
         take: limit,
         skip,
       }),
-      prisma.userLibrary.count({
+      prisma.libraryEntry.count({
         where: {
           userId,
           ...searchFilter,

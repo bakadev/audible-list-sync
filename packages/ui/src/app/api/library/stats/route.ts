@@ -14,13 +14,13 @@ export async function GET() {
 
     // Get aggregate stats
     const [totalCount, libraryCount, wishlistCount, lastSync, durationSum] = await Promise.all([
-      prisma.userLibrary.count({
+      prisma.libraryEntry.count({
         where: { userId },
       }),
-      prisma.userLibrary.count({
+      prisma.libraryEntry.count({
         where: { userId, source: "LIBRARY" },
       }),
-      prisma.userLibrary.count({
+      prisma.libraryEntry.count({
         where: { userId, source: "WISHLIST" },
       }),
       prisma.syncHistory.findFirst({
@@ -28,14 +28,14 @@ export async function GET() {
         orderBy: { syncedAt: "desc" },
         select: { syncedAt: true },
       }),
-      prisma.userLibrary.findMany({
+      prisma.libraryEntry.findMany({
         where: { userId },
-        include: { title: { select: { duration: true } } },
+        include: { title: { select: { runtimeLengthMin: true } } },
       }),
     ]);
 
     // Calculate total duration in minutes
-    const totalDuration = durationSum.reduce((sum, item) => sum + (item.title.duration || 0), 0);
+    const totalDuration = durationSum.reduce((sum, item) => sum + (item.title.runtimeLengthMin || 0), 0);
 
     return NextResponse.json({
       total: totalCount,
