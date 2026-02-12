@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifySyncToken, extractBearerToken } from "@/lib/jwt";
 import prisma from "@/lib/prisma";
 import { LibrarySource } from "@prisma/client";
+import { fetchTitleMetadata } from "@/lib/audnex";
 
 // Maximum payload size: 50MB
 const MAX_PAYLOAD_SIZE = 50 * 1024 * 1024;
@@ -137,130 +138,260 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // T034-T037: Import processing in transaction
-    const result = await prisma.$transaction(async (tx) => {
-      // Mark token as used immediately
-      await tx.syncToken.update({
-        where: { jti },
-        data: { used: true },
-      });
+    // Mark token as used immediately
+    await prisma.syncToken.update({
+      where: { jti },
+      data: { used: true },
+    });
 
-      // T034: Full-replace strategy - delete existing user library
-      await tx.userLibrary.deleteMany({
-        where: { userId },
-      });
+    // T034: Full-replace strategy - delete existing user library
+    await prisma.libraryEntry.deleteMany({
+      where: { userId },
+    });
 
-      // T035: Process titles and upsert to catalog
-      let newToCatalog = 0;
+    // T035-T037: Process each title
+    let newToCatalog = 0;
+    let imported = 0;
+    let failed = 0;
 
-      const catalogUpserts = body.titles.map(async (title) => {
-        // Check if title exists in catalog
-        const existing = await tx.titleCatalog.findUnique({
-          where: { asin: title.asin },
+    for (const extensionTitle of body.titles) {
+      try {
+        const asin = extensionTitle.asin;
+
+        // Check if Title already exists
+        let titleExists = await prisma.title.findUnique({
+          where: { asin },
         });
 
-        if (existing) {
-          // Update existing title metadata
-          return tx.titleCatalog.update({
-            where: { asin: title.asin },
-            data: {
-              title: title.title,
-              subtitle: title.subtitle,
-              authors: title.authors,
-              narrators: title.narrators || [],
-              seriesName: title.seriesName,
-              seriesPosition: title.seriesPosition,
-              duration: title.duration,
-              coverImageUrl: title.coverImageUrl,
-              summary: title.summary,
-              rating: title.rating,
-              ratingCount: title.ratingCount,
-              publisher: title.publisher,
-              releaseDate: title.releaseDate ? new Date(title.releaseDate) : null,
-              language: title.language,
-              categories: title.categories || [],
-            },
-          });
-        } else {
-          // Insert new title
-          newToCatalog++;
-          return tx.titleCatalog.create({
-            data: {
-              asin: title.asin,
-              title: title.title,
-              subtitle: title.subtitle,
-              authors: title.authors,
-              narrators: title.narrators || [],
-              seriesName: title.seriesName,
-              seriesPosition: title.seriesPosition,
-              duration: title.duration,
-              coverImageUrl: title.coverImageUrl,
-              summary: title.summary,
-              rating: title.rating,
-              ratingCount: title.ratingCount,
-              publisher: title.publisher,
-              releaseDate: title.releaseDate ? new Date(title.releaseDate) : null,
-              language: title.language,
-              categories: title.categories || [],
-            },
-          });
+        // Fetch from Audnex API if title doesn't exist
+        let audnexData = null;
+        if (!titleExists) {
+          audnexData = await fetchTitleMetadata(asin);
+
+          if (!audnexData) {
+            warnings.push(`Failed to fetch metadata for ASIN ${asin}, skipping`);
+            failed++;
+            continue;
+          }
         }
-      });
 
-      // Wait for all catalog operations
-      await Promise.all(catalogUpserts);
+        // Create title and relationships in transaction
+        await prisma.$transaction(async (tx) => {
+          // Create Series first if it exists (to satisfy foreign key)
+          if (audnexData && audnexData.seriesPrimary) {
+            await tx.series.upsert({
+              where: { asin: audnexData.seriesPrimary.asin },
+              create: {
+                asin: audnexData.seriesPrimary.asin,
+                name: audnexData.seriesPrimary.name,
+              },
+              update: {
+                name: audnexData.seriesPrimary.name,
+              },
+            });
+          }
 
-      // T036: Batch insert UserLibrary entries
-      // First, get all titleIds from catalog
-      const titleIds = await Promise.all(
-        body.titles.map(async (title) => {
-          const catalogEntry = await tx.titleCatalog.findUnique({
-            where: { asin: title.asin },
-            select: { id: true },
+          // Upsert Title record from Audnex data
+          if (audnexData) {
+            await tx.title.upsert({
+              where: { asin },
+              create: {
+                asin,
+                title: audnexData.title,
+                subtitle: audnexData.subtitle,
+                description: audnexData.description,
+                summary: audnexData.summary,
+                image: audnexData.image,
+                runtimeLengthMin: audnexData.runtimeLengthMin,
+                rating: audnexData.rating,
+                releaseDate: audnexData.releaseDate
+                  ? new Date(audnexData.releaseDate)
+                  : null,
+                publisherName: audnexData.publisherName,
+                isbn: audnexData.isbn,
+                language: audnexData.language,
+                region: audnexData.region,
+                formatType: audnexData.formatType,
+                literatureType: audnexData.literatureType,
+                copyright: audnexData.copyright,
+                isAdult: audnexData.isAdult ?? false,
+                seriesAsin: audnexData.seriesPrimary?.asin,
+                seriesPosition: audnexData.seriesPrimary?.position,
+              },
+              update: {
+                title: audnexData.title,
+                subtitle: audnexData.subtitle,
+                description: audnexData.description,
+                summary: audnexData.summary,
+                image: audnexData.image,
+                runtimeLengthMin: audnexData.runtimeLengthMin,
+                rating: audnexData.rating,
+                releaseDate: audnexData.releaseDate
+                  ? new Date(audnexData.releaseDate)
+                  : null,
+                publisherName: audnexData.publisherName,
+                isbn: audnexData.isbn,
+                language: audnexData.language,
+                region: audnexData.region,
+                formatType: audnexData.formatType,
+                literatureType: audnexData.literatureType,
+                copyright: audnexData.copyright,
+                isAdult: audnexData.isAdult ?? false,
+                seriesAsin: audnexData.seriesPrimary?.asin,
+                seriesPosition: audnexData.seriesPrimary?.position,
+              },
+            });
+
+            if (!titleExists) {
+              newToCatalog++;
+            }
+
+            // Upsert Authors and create AuthorOnTitle join records
+            if (audnexData.authors && audnexData.authors.length > 0) {
+              await tx.authorOnTitle.deleteMany({
+                where: { titleAsin: asin },
+              });
+
+              for (const author of audnexData.authors) {
+                const authorAsin = author.asin || `generated-${author.name.toLowerCase().replace(/\s+/g, '-')}`;
+
+                await tx.author.upsert({
+                  where: { asin: authorAsin },
+                  create: {
+                    asin: authorAsin,
+                    name: author.name,
+                  },
+                  update: {
+                    name: author.name,
+                  },
+                });
+
+                await tx.authorOnTitle.create({
+                  data: {
+                    authorAsin,
+                    titleAsin: asin,
+                  },
+                });
+              }
+            }
+
+            // Upsert Narrators and create NarratorOnTitle join records
+            if (audnexData.narrators && audnexData.narrators.length > 0) {
+              await tx.narratorOnTitle.deleteMany({
+                where: { titleAsin: asin },
+              });
+
+              for (const narrator of audnexData.narrators) {
+                const narratorRecord = await tx.narrator.upsert({
+                  where: { name: narrator.name },
+                  create: {
+                    name: narrator.name,
+                  },
+                  update: {
+                    name: narrator.name,
+                  },
+                });
+
+                await tx.narratorOnTitle.create({
+                  data: {
+                    narratorId: narratorRecord.id,
+                    titleAsin: asin,
+                  },
+                });
+              }
+            }
+
+            // Upsert Genres and link to Title
+            if (audnexData.genres && audnexData.genres.length > 0) {
+              await tx.genreOnTitle.deleteMany({
+                where: { titleAsin: asin },
+              });
+
+              for (const genre of audnexData.genres) {
+                await tx.genre.upsert({
+                  where: { asin: genre.asin },
+                  create: {
+                    asin: genre.asin,
+                    name: genre.name,
+                    type: genre.type,
+                  },
+                  update: {
+                    name: genre.name,
+                    type: genre.type,
+                  },
+                });
+
+                await tx.genreOnTitle.create({
+                  data: {
+                    genreAsin: genre.asin,
+                    titleAsin: asin,
+                  },
+                });
+              }
+            }
+          }
+
+          // Create LibraryEntry with user-specific data from extension
+          await tx.libraryEntry.upsert({
+            where: {
+              userId_titleAsin: {
+                userId,
+                titleAsin: asin,
+              },
+            },
+            create: {
+              userId,
+              titleAsin: asin,
+              userRating: extensionTitle.personalRating || 0,
+              status: extensionTitle.listeningProgress === 100 ? 'Finished' :
+                      extensionTitle.listeningProgress && extensionTitle.listeningProgress > 0 ? 'In Progress' : 'Not Started',
+              progress: extensionTitle.listeningProgress || 0,
+              timeLeft: null,
+              source: extensionTitle.source as LibrarySource,
+            },
+            update: {
+              userRating: extensionTitle.personalRating || 0,
+              status: extensionTitle.listeningProgress === 100 ? 'Finished' :
+                      extensionTitle.listeningProgress && extensionTitle.listeningProgress > 0 ? 'In Progress' : 'Not Started',
+              progress: extensionTitle.listeningProgress || 0,
+              timeLeft: null,
+              source: extensionTitle.source as LibrarySource,
+            },
           });
-          return { asin: title.asin, titleId: catalogEntry!.id };
-        })
-      );
+        });
 
-      const titleIdMap = new Map(titleIds.map((t) => [t.asin, t.titleId]));
+        imported++;
+      } catch (error) {
+        console.error(`Error processing title ${extensionTitle.asin}:`, error);
+        warnings.push(`Failed to import ${extensionTitle.asin}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        failed++;
+      }
+    }
 
-      // Create UserLibrary entries
-      await tx.userLibrary.createMany({
-        data: body.titles.map((title) => ({
-          userId,
-          titleId: titleIdMap.get(title.asin)!,
-          source: title.source as LibrarySource,
-          listeningProgress: title.listeningProgress || 0,
-          personalRating: title.personalRating,
-          dateAdded: new Date(title.dateAdded),
-        })),
-      });
+    // Count library vs wishlist
+    const libraryCount = body.titles.filter((t) => t.source === "LIBRARY").length;
+    const wishlistCount = body.titles.filter((t) => t.source === "WISHLIST").length;
 
-      // Count library vs wishlist
-      const libraryCount = body.titles.filter((t) => t.source === "LIBRARY").length;
-      const wishlistCount = body.titles.filter((t) => t.source === "WISHLIST").length;
-
-      // T037: Log sync history
-      await tx.syncHistory.create({
-        data: {
-          userId,
-          titlesImported: body.titles.length,
-          newToCatalog,
-          libraryCount,
-          wishlistCount,
-          warnings: warnings.length > 0 ? warnings : [],
-          success: true,
-          syncedAt: new Date(),
-        },
-      });
-
-      return {
-        imported: body.titles.length,
+    // T037: Log sync history
+    await prisma.syncHistory.create({
+      data: {
+        userId,
+        titlesImported: imported,
         newToCatalog,
         libraryCount,
         wishlistCount,
-      };
+        warnings: warnings.length > 0 ? warnings : [],
+        success: failed === 0,
+        syncedAt: new Date(),
+      },
     });
+
+    const result = {
+      imported,
+      newToCatalog,
+      libraryCount,
+      wishlistCount,
+    };
 
     // T038: Return success response
     return NextResponse.json({
