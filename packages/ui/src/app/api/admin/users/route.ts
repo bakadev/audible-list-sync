@@ -72,10 +72,10 @@ export async function GET(req: NextRequest) {
           syncHistory: {
             take: 1,
             orderBy: {
-              createdAt: 'desc',
+              syncedAt: 'desc',
             },
             select: {
-              createdAt: true,
+              syncedAt: true,
             },
           },
         },
@@ -95,7 +95,7 @@ export async function GET(req: NextRequest) {
       isAdmin: u.isAdmin,
       createdAt: u.createdAt,
       libraryCount: u._count.libraryEntries,
-      lastImportAt: u.syncHistory[0]?.createdAt || null,
+      lastImportAt: u.syncHistory[0]?.syncedAt || null,
     }))
 
     // T072: Return UserListResponse with pagination metadata

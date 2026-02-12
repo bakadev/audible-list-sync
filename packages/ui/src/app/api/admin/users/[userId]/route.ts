@@ -46,7 +46,7 @@ export async function GET(
         syncHistory: {
           take: 1,
           orderBy: {
-            createdAt: 'desc',
+            syncedAt: 'desc',
           },
         },
       },
@@ -187,7 +187,7 @@ export async function GET(
         isAdmin: user.isAdmin,
         createdAt: user.createdAt,
         libraryCount: user._count.libraryEntries,
-        lastImportAt: user.syncHistory[0]?.createdAt || null,
+        lastImportAt: user.syncHistory[0]?.syncedAt || null,
       },
       library: formattedLibrary,
       summary,
