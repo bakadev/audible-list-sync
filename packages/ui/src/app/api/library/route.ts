@@ -73,8 +73,27 @@ export async function GET(request: NextRequest) {
       }),
     ]);
 
+    // Transform the data to match the expected client format
+    const transformedItems = items.map((item) => ({
+      id: item.id,
+      source: item.source,
+      progress: item.progress,
+      userRating: item.userRating,
+      updatedAt: item.updatedAt.toISOString(),
+      title: {
+        asin: item.title.asin,
+        title: item.title.title,
+        subtitle: item.title.subtitle,
+        authors: item.title.authors.map((a) => a.author.name),
+        narrators: item.title.narrators.map((n) => n.narrator.name),
+        runtimeLengthMin: item.title.runtimeLengthMin,
+        image: item.title.image,
+        rating: item.title.rating ? Number(item.title.rating) : null,
+      },
+    }));
+
     return NextResponse.json({
-      items,
+      items: transformedItems,
       pagination: {
         page,
         limit,

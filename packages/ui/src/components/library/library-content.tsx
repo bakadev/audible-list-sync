@@ -9,17 +9,17 @@ import { LibrarySkeleton } from "./library-skeleton";
 interface LibraryItem {
   id: string;
   source: "LIBRARY" | "WISHLIST";
-  listeningProgress: number;
-  personalRating: number | null;
-  dateAdded: string;
+  progress: number;
+  userRating: number | null;
+  updatedAt: string;
   title: {
     asin: string;
     title: string;
     subtitle: string | null;
     authors: string[];
     narrators: string[];
-    duration: number | null;
-    coverImageUrl: string | null;
+    runtimeLengthMin: number | null;
+    image: string | null;
     rating: number | null;
   };
 }
@@ -113,11 +113,11 @@ export function LibraryContent() {
               asin={item.title.asin}
               title={item.title.title}
               authors={item.title.authors}
-              coverImageUrl={item.title.coverImageUrl}
-              duration={item.title.duration}
+              coverImageUrl={item.title.image}
+              duration={item.title.runtimeLengthMin}
               rating={item.title.rating}
               source={item.source}
-              listeningProgress={item.listeningProgress}
+              listeningProgress={item.progress}
             />
           ))}
         </div>
