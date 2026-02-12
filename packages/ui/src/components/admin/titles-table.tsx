@@ -12,6 +12,7 @@ import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { RefreshCw } from 'lucide-react'
 
 interface Title {
   asin: string
@@ -273,7 +274,7 @@ export default function TitlesTable({ searchParams }: TitlesTableProps) {
                       disabled={refreshingAsin === title.asin}
                       title="Refresh from Audnex API"
                     >
-                      {refreshingAsin === title.asin ? '...' : '🔄'}
+                      <RefreshCw className={`h-4 w-4 ${refreshingAsin === title.asin ? 'animate-spin' : ''}`} />
                     </Button>
                   </TableCell>
                 </TableRow>

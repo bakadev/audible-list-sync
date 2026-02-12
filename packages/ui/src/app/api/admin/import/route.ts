@@ -98,6 +98,20 @@ export async function POST(req: NextRequest) {
 
         // T045: Wrap database operations in transaction for atomicity
         await prisma.$transaction(async (tx) => {
+          // T042: Upsert Series record FIRST if seriesPrimary exists (to satisfy foreign key constraint)
+          if (audnexData && audnexData.seriesPrimary) {
+            await tx.series.upsert({
+              where: { asin: audnexData.seriesPrimary.asin },
+              create: {
+                asin: audnexData.seriesPrimary.asin,
+                name: audnexData.seriesPrimary.name,
+              },
+              update: {
+                name: audnexData.seriesPrimary.name,
+              },
+            })
+          }
+
           // T038: Upsert Title record from Audnex data
           if (audnexData) {
             await tx.title.upsert({
@@ -149,20 +163,6 @@ export async function POST(req: NextRequest) {
               },
             })
 
-            // T042: Upsert Series record if seriesPrimary exists
-            if (audnexData.seriesPrimary) {
-              await tx.series.upsert({
-                where: { asin: audnexData.seriesPrimary.asin },
-                create: {
-                  asin: audnexData.seriesPrimary.asin,
-                  name: audnexData.seriesPrimary.name,
-                },
-                update: {
-                  name: audnexData.seriesPrimary.name,
-                },
-              })
-            }
-
             // T039: Upsert Authors and create AuthorOnTitle join records
             if (audnexData.authors && audnexData.authors.length > 0) {
               // First, clear existing author relationships for this title
@@ -171,7 +171,7 @@ export async function POST(req: NextRequest) {
               })
 
               // Create/update authors and establish relationships
-              for (const [index, author] of audnexData.authors.entries()) {
+              for (const author of audnexData.authors) {
                 const authorAsin = author.asin || `generated-${author.name.toLowerCase().replace(/\s+/g, '-')}`
 
                 await tx.author.upsert({
@@ -189,7 +189,6 @@ export async function POST(req: NextRequest) {
                   data: {
                     authorAsin,
                     titleAsin: asin,
-                    position: index,
                   },
                 })
               }
@@ -203,8 +202,8 @@ export async function POST(req: NextRequest) {
               })
 
               // Create/update narrators and establish relationships
-              for (const [index, narrator] of audnexData.narrators.entries()) {
-                await tx.narrator.upsert({
+              for (const narrator of audnexData.narrators) {
+                const narratorRecord = await tx.narrator.upsert({
                   where: { name: narrator.name },
                   create: {
                     name: narrator.name,
@@ -216,9 +215,8 @@ export async function POST(req: NextRequest) {
 
                 await tx.narratorOnTitle.create({
                   data: {
-                    narratorName: narrator.name,
+                    narratorId: narratorRecord.id,
                     titleAsin: asin,
-                    position: index,
                   },
                 })
               }
@@ -272,14 +270,14 @@ export async function POST(req: NextRequest) {
               status: extensionTitle.status || 'Not Started',
               progress: extensionTitle.progress || 0,
               timeLeft: extensionTitle.timeLeft,
-              source: 'EXTENSION',
+              source: 'LIBRARY',
             },
             update: {
               userRating: extensionTitle.rating || 0,
               status: extensionTitle.status || 'Not Started',
               progress: extensionTitle.progress || 0,
               timeLeft: extensionTitle.timeLeft,
-              source: 'EXTENSION',
+              source: 'LIBRARY',
             },
           })
         })
@@ -313,13 +311,14 @@ export async function POST(req: NextRequest) {
     await prisma.syncHistory.create({
       data: {
         userId: session.user.id,
-        source: 'EXTENSION',
-        status,
-        itemsProcessed: summary.totalCount,
-        itemsSucceeded: summary.successCount,
-        itemsFailed: summary.failureCount,
-        durationMs,
-        errors: summary.errors.length > 0 ? JSON.stringify(summary.errors) : null,
+        syncedAt: new Date(),
+        titlesImported: summary.successCount,
+        newToCatalog: summary.successCount, // For manual import, all successful imports are new
+        libraryCount: summary.successCount, // All imported titles go to library
+        wishlistCount: 0,
+        warnings: [],
+        success: status === 'success',
+        errorMessage: summary.errors.length > 0 ? JSON.stringify(summary.errors) : null,
       },
     })
 

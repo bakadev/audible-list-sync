@@ -113,6 +113,20 @@ export async function POST(
 
     // T134: Update Title and relations in transaction
     await prisma.$transaction(async (tx) => {
+      // Update Series FIRST if exists (to satisfy foreign key constraint)
+      if (audnexData.seriesPrimary) {
+        await tx.series.upsert({
+          where: { asin: audnexData.seriesPrimary.asin },
+          create: {
+            asin: audnexData.seriesPrimary.asin,
+            name: audnexData.seriesPrimary.name,
+          },
+          update: {
+            name: audnexData.seriesPrimary.name,
+          },
+        })
+      }
+
       // Update Title record
       await tx.title.update({
         where: { asin },
@@ -140,27 +154,13 @@ export async function POST(
         },
       })
 
-      // Update Series if exists
-      if (audnexData.seriesPrimary) {
-        await tx.series.upsert({
-          where: { asin: audnexData.seriesPrimary.asin },
-          create: {
-            asin: audnexData.seriesPrimary.asin,
-            name: audnexData.seriesPrimary.name,
-          },
-          update: {
-            name: audnexData.seriesPrimary.name,
-          },
-        })
-      }
-
       // Update Authors
       if (audnexData.authors && audnexData.authors.length > 0) {
         await tx.authorOnTitle.deleteMany({
           where: { titleAsin: asin },
         })
 
-        for (const [index, author] of audnexData.authors.entries()) {
+        for (const author of audnexData.authors) {
           const authorAsin =
             author.asin ||
             `generated-${author.name.toLowerCase().replace(/\s+/g, '-')}`
@@ -180,7 +180,6 @@ export async function POST(
             data: {
               authorAsin,
               titleAsin: asin,
-              position: index,
             },
           })
         }
@@ -192,8 +191,8 @@ export async function POST(
           where: { titleAsin: asin },
         })
 
-        for (const [index, narrator] of audnexData.narrators.entries()) {
-          await tx.narrator.upsert({
+        for (const narrator of audnexData.narrators) {
+          const narratorRecord = await tx.narrator.upsert({
             where: { name: narrator.name },
             create: {
               name: narrator.name,
@@ -205,9 +204,8 @@ export async function POST(
 
           await tx.narratorOnTitle.create({
             data: {
-              narratorName: narrator.name,
+              narratorId: narratorRecord.id,
               titleAsin: asin,
-              position: index,
             },
           })
         }
