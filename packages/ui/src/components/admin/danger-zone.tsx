@@ -11,6 +11,15 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogClose,
+  DialogOverlay,
+  DialogPortal,
+} from '@/components/ui/dialog'
 
 interface DangerZoneProps {
   userId: string
@@ -61,89 +70,96 @@ export default function DangerZone({ userId, userEmail }: DangerZoneProps) {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow border-2 border-red-200">
-      <div className="px-6 py-4 border-b border-red-200 bg-red-50">
-        <h2 className="text-lg font-semibold text-red-900">Danger Zone</h2>
-        <p className="text-sm text-red-700 mt-1">
-          Irreversible and destructive actions
-        </p>
-      </div>
+    <>
+      <Card className="border-destructive/50">
+        <CardHeader className="bg-destructive/10 border-b border-destructive/20">
+          <CardTitle className="text-destructive">Danger Zone</CardTitle>
+          <CardDescription className="text-destructive/80">
+            Irreversible and destructive actions
+          </CardDescription>
+        </CardHeader>
 
-      <div className="p-6">
-        {/* Success Message */}
-        {success && (
-          <div className="mb-4 bg-green-50 border border-green-200 rounded-lg p-4">
-            <p className="text-green-800">{success}</p>
-            <p className="text-sm text-green-600 mt-1">
-              Page will refresh automatically...
-            </p>
-          </div>
-        )}
+        <CardContent className="pt-6">
+          {/* Success Message */}
+          {success && (
+            <div className="mb-4 bg-green-500/10 border border-green-500/20 rounded-lg p-4">
+              <p className="text-green-700 dark:text-green-400">{success}</p>
+              <p className="text-sm text-green-600 dark:text-green-500 mt-1">
+                Page will refresh automatically...
+              </p>
+            </div>
+          )}
 
-        {/* Error Message */}
-        {error && (
-          <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-4">
-            <p className="text-red-800">Error: {error}</p>
-          </div>
-        )}
+          {/* Error Message */}
+          {error && (
+            <div className="mb-4 bg-destructive/10 border border-destructive/20 rounded-lg p-4">
+              <p className="text-destructive">Error: {error}</p>
+            </div>
+          )}
 
-        {/* Drop Library Button */}
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <h3 className="text-sm font-medium text-gray-900">
-              Drop User Library
-            </h3>
-            <p className="text-sm text-gray-600 mt-1">
-              Delete all library entries for this user. This action cannot be
-              undone.
-            </p>
+          {/* Drop Library Button */}
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <h3 className="text-sm font-medium">Drop User Library</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                Delete all library entries for this user. This action cannot be undone.
+              </p>
+            </div>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => setShowConfirmDialog(true)}
+              disabled={loading}
+              className="ml-4"
+            >
+              Drop Library
+            </Button>
           </div>
-          <button
-            onClick={() => setShowConfirmDialog(true)}
-            disabled={loading}
-            className="ml-4 px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Drop Library
-          </button>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {/* T104: Confirmation Dialog */}
-      {showConfirmDialog && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
-            <div className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                Confirm Library Deletion
-              </h3>
-              <p className="text-sm text-gray-600 mb-4">
-                Are you sure you want to delete all library entries for{' '}
-                <span className="font-semibold">{userEmail}</span>?
-              </p>
-              <p className="text-sm text-red-600 font-medium mb-4">
+      <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <DialogPortal>
+          <DialogOverlay />
+          <DialogContent className="max-w-md">
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-lg font-semibold mb-2">
+                  Confirm Library Deletion
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Are you sure you want to delete all library entries for{' '}
+                  <span className="font-semibold text-foreground">{userEmail}</span>?
+                </p>
+              </div>
+              <p className="text-sm text-destructive font-medium">
                 This action cannot be undone!
               </p>
 
-              <div className="flex justify-end space-x-3">
-                <button
-                  onClick={() => setShowConfirmDialog(false)}
-                  disabled={loading}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
-                >
-                  Cancel
-                </button>
-                <button
+              <div className="flex justify-end gap-3 pt-4">
+                <DialogClose asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={loading}
+                  >
+                    Cancel
+                  </Button>
+                </DialogClose>
+                <Button
+                  variant="destructive"
+                  size="sm"
                   onClick={handleDropLibrary}
                   disabled={loading}
-                  className="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {loading ? 'Deleting...' : 'Yes, Delete Library'}
-                </button>
+                </Button>
               </div>
             </div>
-          </div>
-        </div>
-      )}
-    </div>
+          </DialogContent>
+        </DialogPortal>
+      </Dialog>
+    </>
   )
 }
