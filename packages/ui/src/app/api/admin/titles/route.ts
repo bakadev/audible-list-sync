@@ -107,16 +107,10 @@ export async function GET(req: NextRequest) {
             include: {
               author: true,
             },
-            orderBy: {
-              position: 'asc',
-            },
           },
           narrators: {
             include: {
               narrator: true,
-            },
-            orderBy: {
-              position: 'asc',
             },
           },
           genres: {

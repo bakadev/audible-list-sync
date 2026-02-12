@@ -41,16 +41,10 @@ export async function GET(
           include: {
             author: true,
           },
-          orderBy: {
-            position: 'asc',
-          },
         },
         narrators: {
           include: {
             narrator: true,
-          },
-          orderBy: {
-            position: 'asc',
           },
         },
         genres: {
@@ -126,11 +120,9 @@ export async function GET(
         authors: title.authors.map((a) => ({
           asin: a.author.asin,
           name: a.author.name,
-          position: a.position,
         })),
         narrators: title.narrators.map((n) => ({
           name: n.narrator.name,
-          position: n.position,
         })),
         genres: title.genres.map((g) => ({
           asin: g.genre.asin,
@@ -259,16 +251,10 @@ export async function PUT(
           include: {
             author: true,
           },
-          orderBy: {
-            position: 'asc',
-          },
         },
         narrators: {
           include: {
             narrator: true,
-          },
-          orderBy: {
-            position: 'asc',
           },
         },
         genres: {
