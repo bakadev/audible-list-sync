@@ -67,8 +67,9 @@ export async function GET(
     const statusFilter = searchParams.get('status')
     const statusWhere = statusFilter ? { status: statusFilter } : {}
 
-    // Fetch from new LibraryEntry table (enhanced catalog)
-    const newLibrary = await prisma.libraryEntry.findMany({
+    // T076: Fetch user's full library with LibraryEntry records
+    // T077: Include Title metadata with authors, narrators, genres, series
+    const library = await prisma.libraryEntry.findMany({
       where: {
         userId,
         ...sourceWhere,
@@ -101,22 +102,8 @@ export async function GET(
       },
     })
 
-    // Fetch from legacy UserLibrary table (original MVP catalog)
-    const legacyLibrary = await prisma.userLibrary.findMany({
-      where: {
-        userId,
-        ...sourceWhere,
-      },
-      include: {
-        title: true,
-      },
-      orderBy: {
-        updatedAt: 'desc',
-      },
-    })
-
-    // Combine counts from both tables
-    const newEntries = await prisma.libraryEntry.findMany({
+    // T080: Calculate LibrarySummary with counts by source and status
+    const allEntries = await prisma.libraryEntry.findMany({
       where: { userId },
       select: {
         source: true,
@@ -124,32 +111,21 @@ export async function GET(
       },
     })
 
-    const legacyEntries = await prisma.userLibrary.findMany({
-      where: { userId },
-      select: {
-        source: true,
-      },
-    })
-
-    // Calculate combined summary from both tables
-    const totalEntries = newEntries.length + legacyEntries.length
     const summary = {
-      total: totalEntries,
+      total: allEntries.length,
       bySource: {
-        LIBRARY: newEntries.filter((e) => e.source === 'LIBRARY').length +
-                 legacyEntries.filter((e) => e.source === 'LIBRARY').length,
-        WISHLIST: newEntries.filter((e) => e.source === 'WISHLIST').length +
-                  legacyEntries.filter((e) => e.source === 'WISHLIST').length,
+        LIBRARY: allEntries.filter((e) => e.source === 'LIBRARY').length,
+        WISHLIST: allEntries.filter((e) => e.source === 'WISHLIST').length,
       },
       byStatus: {
-        'Finished': newEntries.filter((e) => e.status === 'Finished').length,
-        'In Progress': newEntries.filter((e) => e.status === 'In Progress').length,
-        'Not Started': newEntries.filter((e) => e.status === 'Not Started').length,
+        'Finished': allEntries.filter((e) => e.status === 'Finished').length,
+        'In Progress': allEntries.filter((e) => e.status === 'In Progress').length,
+        'Not Started': allEntries.filter((e) => e.status === 'Not Started').length,
       },
     }
 
-    // Format new library entries (enhanced catalog)
-    const formattedNewLibrary = newLibrary.map((entry) => ({
+    // Format library entries for response
+    const formattedLibrary = library.map((entry) => ({
       id: entry.id,
       titleAsin: entry.titleAsin,
       userRating: entry.userRating,
@@ -157,7 +133,6 @@ export async function GET(
       progress: entry.progress,
       timeLeft: entry.timeLeft,
       source: entry.source,
-      catalogType: 'enhanced' as const,
       createdAt: entry.createdAt,
       updatedAt: entry.updatedAt,
       title: {
@@ -192,48 +167,6 @@ export async function GET(
           : null,
       },
     }))
-
-    // Format legacy library entries (original catalog)
-    const formattedLegacyLibrary = legacyLibrary.map((entry) => ({
-      id: entry.id,
-      titleAsin: entry.title.asin,
-      userRating: entry.personalRating || 0,
-      status: entry.listeningProgress === 100 ? 'Finished' :
-              entry.listeningProgress > 0 ? 'In Progress' : 'Not Started',
-      progress: entry.listeningProgress,
-      timeLeft: null,
-      source: entry.source,
-      catalogType: 'legacy' as const,
-      createdAt: entry.createdAt,
-      updatedAt: entry.updatedAt,
-      title: {
-        asin: entry.title.asin,
-        title: entry.title.title,
-        subtitle: entry.title.subtitle,
-        description: entry.title.summary,
-        summary: entry.title.summary,
-        image: entry.title.coverImageUrl,
-        runtimeLengthMin: entry.title.duration,
-        rating: entry.title.rating?.toString() || null,
-        releaseDate: entry.title.releaseDate,
-        publisherName: entry.title.publisher,
-        authors: entry.title.authors.map((name) => ({ asin: '', name })),
-        narrators: entry.title.narrators.map((name) => ({ name })),
-        genres: entry.title.categories.map((name) => ({ asin: '', name, type: 'category' })),
-        series: entry.title.seriesName
-          ? {
-              asin: '',
-              name: entry.title.seriesName,
-              position: entry.title.seriesPosition?.toString() || null,
-            }
-          : null,
-      },
-    }))
-
-    // Combine and sort by updatedAt
-    const formattedLibrary = [...formattedNewLibrary, ...formattedLegacyLibrary].sort(
-      (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime()
-    )
 
     // T081: Return UserDetailsResponse with user, library, and summary
     return NextResponse.json({
