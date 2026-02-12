@@ -1,11 +1,11 @@
 /**
  * Admin Import API Route
  *
- * Processes Chrome extension JSON export and imports library data
+ * Manually pre-populate title catalog metadata from ASINs
  * - Validates user authentication and admin role
  * - Fetches missing title metadata from Audnex API
  * - Creates/updates titles with normalized data (authors, narrators, genres, series)
- * - Creates user-specific library entries with progress tracking
+ * - Does NOT create library entries - this only populates the catalog
  */
 
 import { NextRequest, NextResponse } from 'next/server'
@@ -254,32 +254,8 @@ export async function POST(req: NextRequest) {
             }
           }
 
-          // T043: Create or update LibraryEntry with user-specific data
-          // T044: Use unique constraint (userId, titleAsin) to prevent duplicates
-          await tx.libraryEntry.upsert({
-            where: {
-              userId_titleAsin: {
-                userId: session.user.id,
-                titleAsin: asin,
-              },
-            },
-            create: {
-              userId: session.user.id,
-              titleAsin: asin,
-              userRating: extensionTitle.rating || 0,
-              status: extensionTitle.status || 'Not Started',
-              progress: extensionTitle.progress || 0,
-              timeLeft: extensionTitle.timeLeft,
-              source: 'LIBRARY',
-            },
-            update: {
-              userRating: extensionTitle.rating || 0,
-              status: extensionTitle.status || 'Not Started',
-              progress: extensionTitle.progress || 0,
-              timeLeft: extensionTitle.timeLeft,
-              source: 'LIBRARY',
-            },
-          })
+          // NOTE: Admin import only populates Title catalog metadata
+          // It does NOT create LibraryEntry records - that's only for extension sync
         })
 
         summary.successCount++
@@ -308,13 +284,14 @@ export async function POST(req: NextRequest) {
 
     // T046: Create SyncHistory record with summary stats
     // T049: Store errors array with ASIN and error details
+    // NOTE: Admin import only updates catalog, not user libraries
     await prisma.syncHistory.create({
       data: {
         userId: session.user.id,
         syncedAt: new Date(),
         titlesImported: summary.successCount,
-        newToCatalog: summary.successCount, // For manual import, all successful imports are new
-        libraryCount: summary.successCount, // All imported titles go to library
+        newToCatalog: summary.successCount, // For admin import, all successful imports update catalog
+        libraryCount: 0, // Admin import does NOT add to user libraries
         wishlistCount: 0,
         warnings: [],
         success: status === 'success',
