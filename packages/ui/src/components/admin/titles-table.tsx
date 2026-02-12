@@ -8,6 +8,10 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
 
 interface Title {
   asin: string
@@ -110,106 +114,97 @@ export default function TitlesTable({ searchParams }: TitlesTableProps) {
 
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-        <p className="text-red-800">Error: {error}</p>
-      </div>
+      <Card className="border-destructive">
+        <CardContent className="py-6">
+          <p className="text-destructive">Error: {error}</p>
+        </CardContent>
+      </Card>
     )
   }
 
   return (
-    <div className="bg-white rounded-lg shadow">
+    <Card>
       {/* T139: Search Bar */}
-      <div className="p-4 border-b border-gray-200">
-        <input
+      <CardHeader>
+        <Input
           type="text"
           placeholder="Search by title, author, or narrator..."
           value={search}
           onChange={(e) => handleSearchChange(e.target.value)}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
         />
-      </div>
+      </CardHeader>
 
       {/* T138: Titles Table */}
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Cover
-              </th>
-              <th
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+      <CardContent>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Cover</TableHead>
+              <TableHead
+                className="cursor-pointer select-none"
                 onClick={() => handleSort('title')}
               >
-                <div className="flex items-center">
+                <div className="flex items-center gap-1">
                   Title
                   {sortBy === 'title' && (
-                    <span className="ml-1">{sortOrder === 'asc' ? '↑' : '↓'}</span>
+                    <span className="text-xs">{sortOrder === 'asc' ? '↑' : '↓'}</span>
                   )}
                 </div>
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                ASIN
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Authors
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Narrators
-              </th>
-              <th
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+              </TableHead>
+              <TableHead>ASIN</TableHead>
+              <TableHead>Authors</TableHead>
+              <TableHead>Narrators</TableHead>
+              <TableHead
+                className="cursor-pointer select-none"
                 onClick={() => handleSort('rating')}
               >
-                <div className="flex items-center">
+                <div className="flex items-center gap-1">
                   Rating
                   {sortBy === 'rating' && (
-                    <span className="ml-1">{sortOrder === 'asc' ? '↑' : '↓'}</span>
+                    <span className="text-xs">{sortOrder === 'asc' ? '↑' : '↓'}</span>
                   )}
                 </div>
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Users
-              </th>
-              <th
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+              </TableHead>
+              <TableHead>Users</TableHead>
+              <TableHead
+                className="cursor-pointer select-none"
                 onClick={() => handleSort('releaseDate')}
               >
-                <div className="flex items-center">
+                <div className="flex items-center gap-1">
                   Released
                   {sortBy === 'releaseDate' && (
-                    <span className="ml-1">{sortOrder === 'asc' ? '↑' : '↓'}</span>
+                    <span className="text-xs">{sortOrder === 'asc' ? '↑' : '↓'}</span>
                   )}
                 </div>
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
             {loading ? (
-              <tr>
-                <td colSpan={8} className="px-6 py-4 text-center">
+              <TableRow>
+                <TableCell colSpan={8} className="text-center py-8">
                   <div className="flex justify-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                   </div>
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ) : titles.length === 0 ? (
-              <tr>
-                <td
+              <TableRow>
+                <TableCell
                   colSpan={8}
-                  className="px-6 py-4 text-center text-sm text-gray-500"
+                  className="text-center py-8 text-muted-foreground"
                 >
                   No titles found
-                </td>
-              </tr>
+                </TableCell>
+              </TableRow>
             ) : (
               titles.map((title) => (
-                <tr
+                <TableRow
                   key={title.asin}
                   onClick={() => handleTitleClick(title.asin)}
-                  className="hover:bg-gray-50 cursor-pointer transition"
+                  className="cursor-pointer"
                 >
-                  <td className="px-6 py-4">
+                  <TableCell>
                     {title.image && (
                       <img
                         src={title.image}
@@ -217,64 +212,62 @@ export default function TitlesTable({ searchParams }: TitlesTableProps) {
                         className="h-16 w-12 object-cover rounded"
                       />
                     )}
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="text-sm font-medium text-gray-900">
-                      {title.title}
-                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm font-medium">{title.title}</div>
                     {title.subtitle && (
-                      <div className="text-xs text-gray-500">{title.subtitle}</div>
+                      <div className="text-xs text-muted-foreground">{title.subtitle}</div>
                     )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-xs font-mono text-gray-500">
+                  </TableCell>
+                  <TableCell className="font-mono text-xs text-muted-foreground">
                     {title.asin}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-900">
+                  </TableCell>
+                  <TableCell className="text-sm">
                     {title.authors.join(', ') || '-'}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-900">
+                  </TableCell>
+                  <TableCell className="text-sm">
                     {title.narrators.join(', ') || '-'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                  </TableCell>
+                  <TableCell className="text-sm">
                     {title.rating || '-'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {title.userCount}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                  </TableCell>
+                  <TableCell className="text-sm">{title.userCount}</TableCell>
+                  <TableCell className="text-sm text-muted-foreground">
                     {title.releaseDate
                       ? new Date(title.releaseDate).toLocaleDateString()
                       : '-'}
-                  </td>
-                </tr>
+                  </TableCell>
+                </TableRow>
               ))
             )}
-          </tbody>
-        </table>
-      </div>
+          </TableBody>
+        </Table>
 
-      {/* T141: Pagination */}
-      <div className="px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-        <div className="text-sm text-gray-700">
-          Showing page {page} of {totalPages} ({totalCount} total titles)
+        {/* T141: Pagination */}
+        <div className="flex items-center justify-between pt-4 border-t mt-4">
+          <div className="text-sm text-muted-foreground">
+            Showing page {page} of {totalPages} ({totalCount} total titles)
+          </div>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handlePrevPage}
+              disabled={page === 1}
+            >
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleNextPage}
+              disabled={page >= totalPages}
+            >
+              Next
+            </Button>
+          </div>
         </div>
-        <div className="flex space-x-2">
-          <button
-            onClick={handlePrevPage}
-            disabled={page === 1}
-            className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Previous
-          </button>
-          <button
-            onClick={handleNextPage}
-            disabled={page >= totalPages}
-            className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            Next
-          </button>
-        </div>
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   )
 }
