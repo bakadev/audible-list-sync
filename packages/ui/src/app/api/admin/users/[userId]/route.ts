@@ -116,7 +116,6 @@ export async function GET(
       bySource: {
         LIBRARY: allEntries.filter((e) => e.source === 'LIBRARY').length,
         WISHLIST: allEntries.filter((e) => e.source === 'WISHLIST').length,
-        EXTENSION: allEntries.filter((e) => e.source === 'EXTENSION').length,
       },
       byStatus: {
         'Finished': allEntries.filter((e) => e.status === 'Finished').length,
