@@ -71,8 +71,8 @@ description: "Task list for Admin Dashboard & Data Import feature"
 - [X] T024 Update middleware.ts to add admin route protection for /admin paths in /Users/traviswilson/Development/my-audible-lists/packages/ui/src/middleware.ts
 - [X] T025 Add redirect to /library for non-admin users attempting /admin access in /Users/traviswilson/Development/my-audible-lists/packages/ui/src/middleware.ts
 - [X] T026 Add redirect to /api/auth/signin for unauthenticated /admin access in /Users/traviswilson/Development/my-audible-lists/packages/ui/src/middleware.ts
-- [ ] T027 Update NextAuth callbacks to auto-assign isAdmin on login if email matches ADMIN_EMAIL env var in /Users/traviswilson/Development/my-audible-lists/packages/ui/src/lib/auth.ts
-- [ ] T028 Add isAdmin field to session object in NextAuth session callback in /Users/traviswilson/Development/my-audible-lists/packages/ui/src/lib/auth.ts
+- [X] T027 Update NextAuth callbacks to auto-assign isAdmin on login if email matches ADMIN_EMAIL env var in /Users/traviswilson/Development/my-audible-lists/packages/ui/src/lib/auth.ts
+- [X] T028 Add isAdmin field to session object in NextAuth session callback in /Users/traviswilson/Development/my-audible-lists/packages/ui/src/lib/auth.ts
 - [X] T029 Add ADMIN_EMAIL environment variable to .env.example in /Users/traviswilson/Development/my-audible-lists/packages/ui/.env.example
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel

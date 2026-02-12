@@ -46,6 +46,7 @@ export default function TitlesTable({ searchParams }: TitlesTableProps) {
   const [page, setPage] = useState(parseInt((searchParams.page as string) || '1'))
   const [totalPages, setTotalPages] = useState(1)
   const [totalCount, setTotalCount] = useState(0)
+  const [refreshingAsin, setRefreshingAsin] = useState<string | null>(null)
 
   useEffect(() => {
     fetchTitles()
@@ -110,6 +111,32 @@ export default function TitlesTable({ searchParams }: TitlesTableProps) {
 
   const handleNextPage = () => {
     if (page < totalPages) setPage(page + 1)
+  }
+
+  // Handle refresh from Audnex
+  const handleRefresh = async (asin: string, e: React.MouseEvent) => {
+    e.stopPropagation() // Prevent row click navigation
+
+    setRefreshingAsin(asin)
+
+    try {
+      const response = await fetch(`/api/admin/titles/${asin}/refresh`, {
+        method: 'POST',
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        throw new Error(data.error || 'Failed to refresh title')
+      }
+
+      // Refresh the table data
+      await fetchTitles()
+    } catch (err) {
+      console.error('Error refreshing title:', err)
+      alert(err instanceof Error ? err.message : 'Failed to refresh title')
+    } finally {
+      setRefreshingAsin(null)
+    }
   }
 
   if (error) {
@@ -177,12 +204,13 @@ export default function TitlesTable({ searchParams }: TitlesTableProps) {
                   )}
                 </div>
               </TableHead>
+              <TableHead>Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {loading ? (
               <TableRow>
-                <TableCell colSpan={8} className="text-center py-8">
+                <TableCell colSpan={9} className="text-center py-8">
                   <div className="flex justify-center">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
                   </div>
@@ -191,7 +219,7 @@ export default function TitlesTable({ searchParams }: TitlesTableProps) {
             ) : titles.length === 0 ? (
               <TableRow>
                 <TableCell
-                  colSpan={8}
+                  colSpan={9}
                   className="text-center py-8 text-muted-foreground"
                 >
                   No titles found
@@ -236,6 +264,17 @@ export default function TitlesTable({ searchParams }: TitlesTableProps) {
                     {title.releaseDate
                       ? new Date(title.releaseDate).toLocaleDateString()
                       : '-'}
+                  </TableCell>
+                  <TableCell onClick={(e) => e.stopPropagation()}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => handleRefresh(title.asin, e)}
+                      disabled={refreshingAsin === title.asin}
+                      title="Refresh from Audnex API"
+                    >
+                      {refreshingAsin === title.asin ? '...' : '🔄'}
+                    </Button>
                   </TableCell>
                 </TableRow>
               ))

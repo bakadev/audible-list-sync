@@ -8,6 +8,7 @@
 import { Suspense } from 'react'
 import TitlesTable from '@/components/admin/titles-table'
 import DropAllTitles from '@/components/admin/drop-all-titles'
+import ManualImport from '@/components/admin/manual-import'
 import { Card, CardContent } from '@/components/ui/card'
 
 export default async function AdminTitlesPage({
@@ -23,6 +24,9 @@ export default async function AdminTitlesPage({
           View and manage audiobook title metadata
         </p>
       </div>
+
+      {/* Manual ASIN Import */}
+      <ManualImport />
 
       <Suspense
         fallback={
