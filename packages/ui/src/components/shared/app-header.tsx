@@ -30,7 +30,7 @@ export function AppHeader({ user }: AppHeaderProps) {
       <div className="container flex h-16 items-center justify-between">
         <div className="flex items-center gap-6">
           <Link href="/dashboard" className="text-xl font-bold">
-            Audible Lists
+            audioshlf
           </Link>
 
           {/* Desktop Navigation */}

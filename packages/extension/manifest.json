@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Audible Library Extension",
+  "name": "audioshlf",
   "version": "2.0.0",
-  "description": "Export your Audible library with user-specific data (ratings, listening progress) for backup and analysis",
+  "description": "Sync your Audible library to audioshlf for organization and insights",
   "permissions": [
     "activeTab",
     "storage"
@@ -17,10 +17,12 @@
         "*://*.audible.com/wl*"
       ],
       "js": [
+        "config.js",
         "utils/storage-manager.js",
         "utils/rate-limiter.js",
         "utils/retry-handler.js",
         "utils/json-normalizer.js",
+        "utils/sync.js",
         "scraper/metadata-extractor.js",
         "scraper/library-scraper.js",
         "scraper/wishlist-scraper.js",

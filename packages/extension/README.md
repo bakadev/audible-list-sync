@@ -1,6 +1,6 @@
-# Audible Library Extension
+# audioshlf Extension
 
-A Chrome Manifest V3 extension for exporting your Audible library data with user-specific metadata (personal ratings and listening progress).
+A Chrome Manifest V3 extension for syncing your Audible library to audioshlf with user-specific metadata (personal ratings and listening progress).
 
 ## Features
 
@@ -27,6 +27,42 @@ A Chrome Manifest V3 extension for exporting your Audible library data with user
 3. **Verify Installation**:
    - Extension icon should appear in Chrome toolbar
    - No errors should show on the extensions page
+
+### Configuration
+
+The extension needs to know where to send sync data. Configure the API endpoint:
+
+1. **Copy the configuration template**:
+   ```bash
+   # For local development (default)
+   cp config.production.js config.js
+   # Edit config.js and use localhost:3003
+   ```
+
+   Or manually create `config.js`:
+   ```javascript
+   const CONFIG = {
+     API_URL: 'http://localhost:3003/api/sync/import',
+     APP_URL: 'http://localhost:3003',
+   };
+   if (typeof window !== 'undefined') {
+     window.EXTENSION_CONFIG = CONFIG;
+   }
+   ```
+
+2. **For production**: Use the production template as-is or update with your domain:
+   ```javascript
+   const CONFIG = {
+     API_URL: 'https://audioshlf.app/api/sync/import',
+     APP_URL: 'https://audioshlf.app',
+   };
+   ```
+
+3. **Reload the extension** after changing config:
+   - Go to `chrome://extensions`
+   - Click the reload icon for audioshlf extension
+
+**Note**: `config.js` is git-ignored so you can maintain your own environment-specific settings.
 
 ## Usage
 

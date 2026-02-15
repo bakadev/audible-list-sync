@@ -18,17 +18,21 @@ const OverlayUI = {
   state: {
     visible: true,
     collapsed: false,
-    status: 'idle', // idle, scraping, complete, error
+    status: 'idle', // idle, scraping, complete, error, auto-sync-success, auto-sync-error
     phase: '',
     progress: 0,
     scrapedCount: 0,
     totalCount: 0,
     errorMessage: null,
+    errorTitle: null,
+    errorAction: null,
     warnings: [],
     stats: {
       libraryCount: 0,
       wishlistCount: 0,
       duration: 0,
+      imported: 0,
+      newToCatalog: 0,
     },
   },
   callbacks: {
@@ -126,11 +130,19 @@ const OverlayUI = {
           <!-- Buttons -->
           <button class="audible-ext-button audible-ext-button-primary start-button">Start Sync</button>
           <button class="audible-ext-button audible-ext-button-success download-button" style="display: none;">Download JSON</button>
+          <button class="audible-ext-button audible-ext-button-success view-library-button" style="display: none;">View Library</button>
 
           <!-- Error Recovery Buttons -->
           <div class="audible-ext-error-actions" style="display: none;">
             <button class="audible-ext-button audible-ext-button-primary retry-button">Retry</button>
             <button class="audible-ext-button audible-ext-button-secondary cancel-button">Cancel</button>
+          </div>
+
+          <!-- Auto-Sync Error Actions -->
+          <div class="audible-ext-sync-error-actions" style="display: none;">
+            <button class="audible-ext-button audible-ext-button-primary return-to-app-button" style="display: none;">Return to audioshlf</button>
+            <button class="audible-ext-button audible-ext-button-primary sync-retry-button" style="display: none;">Retry Sync</button>
+            <button class="audible-ext-button audible-ext-button-secondary sync-download-button" style="display: none;">Download JSON</button>
           </div>
 
           <!-- Warnings -->
@@ -160,9 +172,14 @@ const OverlayUI = {
       wishlistCount: container.querySelector('.wishlist-count'),
       startButton: container.querySelector('.start-button'),
       downloadButton: container.querySelector('.download-button'),
+      viewLibraryButton: container.querySelector('.view-library-button'),
       errorActions: container.querySelector('.audible-ext-error-actions'),
       retryButton: container.querySelector('.retry-button'),
       cancelButton: container.querySelector('.cancel-button'),
+      syncErrorActions: container.querySelector('.audible-ext-sync-error-actions'),
+      returnToAppButton: container.querySelector('.return-to-app-button'),
+      syncRetryButton: container.querySelector('.sync-retry-button'),
+      syncDownloadButton: container.querySelector('.sync-download-button'),
       warnings: container.querySelector('.audible-ext-warnings'),
       warningsList: container.querySelector('.warnings-list'),
     };
@@ -191,6 +208,12 @@ const OverlayUI = {
       }
     });
 
+    // View Library button
+    this.elements.viewLibraryButton.addEventListener('click', () => {
+      const appUrl = window.EXTENSION_CONFIG?.APP_URL || 'https://audioshlf.app';
+      window.open(`${appUrl}/library`, '_blank');
+    });
+
     // Retry button
     this.elements.retryButton.addEventListener('click', () => {
       if (this.callbacks.onRetry) {
@@ -202,6 +225,24 @@ const OverlayUI = {
     this.elements.cancelButton.addEventListener('click', () => {
       if (this.callbacks.onCancel) {
         this.callbacks.onCancel();
+      }
+    });
+
+    // Auto-sync error action buttons
+    this.elements.returnToAppButton.addEventListener('click', () => {
+      const appUrl = window.EXTENSION_CONFIG?.APP_URL || 'https://audioshlf.app';
+      window.open(`${appUrl}/library`, '_blank');
+    });
+
+    this.elements.syncRetryButton.addEventListener('click', () => {
+      if (this.callbacks.onRetry) {
+        this.callbacks.onRetry();
+      }
+    });
+
+    this.elements.syncDownloadButton.addEventListener('click', () => {
+      if (this.callbacks.onDownload) {
+        this.callbacks.onDownload();
       }
     });
   },
@@ -270,6 +311,39 @@ const OverlayUI = {
   },
 
   /**
+   * Set auto-sync success state
+   */
+  setAutoSyncSuccess(stats) {
+    this.state.status = 'auto-sync-success';
+    this.state.phase = 'Library synced successfully!';
+    this.state.progress = 100;
+    this.state.stats = {
+      libraryCount: stats.libraryCount || 0,
+      wishlistCount: stats.wishlistCount || 0,
+      imported: stats.imported || 0,
+      newToCatalog: stats.newToCatalog || 0,
+    };
+    this.state.warnings = stats.warnings || [];
+    this.state.errorMessage = null;
+    this.state.errorTitle = null;
+    this.state.errorAction = null;
+    this.render();
+  },
+
+  /**
+   * Set auto-sync error state
+   */
+  setAutoSyncError(errorInfo) {
+    this.state.status = 'auto-sync-error';
+    this.state.phase = errorInfo.title || 'Sync Failed';
+    this.state.errorMessage = errorInfo.message || 'An error occurred during sync.';
+    this.state.errorTitle = errorInfo.title || 'Sync Failed';
+    this.state.errorAction = errorInfo.action || 'download';
+    this.state.errorDetails = errorInfo.details || null;
+    this.render();
+  },
+
+  /**
    * Reset to idle state
    */
   reset() {
@@ -279,6 +353,8 @@ const OverlayUI = {
     this.state.scrapedCount = 0;
     this.state.totalCount = 0;
     this.state.errorMessage = null;
+    this.state.errorTitle = null;
+    this.state.errorAction = null;
     this.state.warnings = [];
     this.render();
   },
@@ -287,24 +363,29 @@ const OverlayUI = {
    * Render UI based on current state
    */
   render() {
-    const { status, phase, progress, scrapedCount, totalCount, errorMessage, stats, warnings } = this.state;
+    const { status, phase, progress, scrapedCount, totalCount, errorMessage, errorAction, stats, warnings } = this.state;
 
     // Status message
     if (phase) {
       this.elements.status.textContent = phase;
       this.elements.status.style.display = 'block';
       this.elements.status.className = 'audible-ext-status';
-      if (status === 'error') {
+      if (status === 'error' || status === 'auto-sync-error') {
         this.elements.status.classList.add('error');
-      } else if (status === 'complete') {
+      } else if (status === 'complete' || status === 'auto-sync-success') {
         this.elements.status.classList.add('success');
       }
     } else {
       this.elements.status.style.display = 'none';
     }
 
-    // Error message
-    if (errorMessage) {
+    // Error message (show additional message for auto-sync errors)
+    if (errorMessage && status === 'auto-sync-error') {
+      // Create two-line display: title (phase) + message
+      this.elements.status.innerHTML = `<strong>${phase}</strong><br/>${errorMessage}`;
+      this.elements.status.className = 'audible-ext-status error';
+      this.elements.status.style.display = 'block';
+    } else if (errorMessage) {
       this.elements.status.textContent = errorMessage;
       this.elements.status.className = 'audible-ext-status error';
       this.elements.status.style.display = 'block';
@@ -321,10 +402,22 @@ const OverlayUI = {
     }
 
     // Stats
-    if (status === 'complete') {
+    if (status === 'complete' || status === 'auto-sync-success') {
       this.elements.stats.style.display = 'grid';
-      this.elements.libraryCount.textContent = stats.libraryCount;
-      this.elements.wishlistCount.textContent = stats.wishlistCount;
+
+      if (status === 'auto-sync-success') {
+        // Show sync-specific stats (imported, new to catalog)
+        this.elements.libraryCount.textContent = stats.imported || 0;
+        this.elements.libraryCount.parentElement.querySelector('.audible-ext-stat-label').textContent = 'Imported';
+        this.elements.wishlistCount.textContent = stats.newToCatalog || 0;
+        this.elements.wishlistCount.parentElement.querySelector('.audible-ext-stat-label').textContent = 'New';
+      } else {
+        // Show normal completion stats (library/wishlist counts)
+        this.elements.libraryCount.textContent = stats.libraryCount;
+        this.elements.libraryCount.parentElement.querySelector('.audible-ext-stat-label').textContent = 'Library';
+        this.elements.wishlistCount.textContent = stats.wishlistCount;
+        this.elements.wishlistCount.parentElement.querySelector('.audible-ext-stat-label').textContent = 'Wishlist';
+      }
     } else {
       this.elements.stats.style.display = 'none';
     }
@@ -333,19 +426,59 @@ const OverlayUI = {
     if (status === 'idle') {
       this.elements.startButton.style.display = 'block';
       this.elements.downloadButton.style.display = 'none';
+      this.elements.viewLibraryButton.style.display = 'none';
       this.elements.errorActions.style.display = 'none';
+      this.elements.syncErrorActions.style.display = 'none';
     } else if (status === 'error') {
       this.elements.startButton.style.display = 'none';
       this.elements.downloadButton.style.display = 'none';
+      this.elements.viewLibraryButton.style.display = 'none';
       this.elements.errorActions.style.display = 'flex';
+      this.elements.syncErrorActions.style.display = 'none';
     } else if (status === 'complete') {
       this.elements.startButton.style.display = 'none';
       this.elements.downloadButton.style.display = 'block';
+      this.elements.viewLibraryButton.style.display = 'none';
       this.elements.errorActions.style.display = 'none';
+      this.elements.syncErrorActions.style.display = 'none';
+    } else if (status === 'auto-sync-success') {
+      this.elements.startButton.style.display = 'none';
+      this.elements.downloadButton.style.display = 'none';
+      this.elements.viewLibraryButton.style.display = 'block';
+      this.elements.errorActions.style.display = 'none';
+      this.elements.syncErrorActions.style.display = 'none';
+    } else if (status === 'auto-sync-error') {
+      this.elements.startButton.style.display = 'none';
+      this.elements.downloadButton.style.display = 'none';
+      this.elements.viewLibraryButton.style.display = 'none';
+      this.elements.errorActions.style.display = 'none';
+      this.elements.syncErrorActions.style.display = 'flex';
+
+      // Show appropriate action buttons based on error type
+      if (errorAction === 'return_to_app') {
+        this.elements.returnToAppButton.style.display = 'block';
+        this.elements.syncRetryButton.style.display = 'none';
+        this.elements.syncDownloadButton.style.display = 'none';
+      } else if (errorAction === 'retry') {
+        this.elements.returnToAppButton.style.display = 'none';
+        this.elements.syncRetryButton.style.display = 'block';
+        this.elements.syncDownloadButton.style.display = 'none';
+      } else if (errorAction === 'download') {
+        this.elements.returnToAppButton.style.display = 'none';
+        this.elements.syncRetryButton.style.display = 'none';
+        this.elements.syncDownloadButton.style.display = 'block';
+      } else {
+        // Default: show download as fallback
+        this.elements.returnToAppButton.style.display = 'none';
+        this.elements.syncRetryButton.style.display = 'none';
+        this.elements.syncDownloadButton.style.display = 'block';
+      }
     } else if (status === 'scraping') {
       this.elements.startButton.style.display = 'none';
       this.elements.downloadButton.style.display = 'none';
+      this.elements.viewLibraryButton.style.display = 'none';
       this.elements.errorActions.style.display = 'none';
+      this.elements.syncErrorActions.style.display = 'none';
     }
 
     // Warnings

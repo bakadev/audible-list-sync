@@ -21,9 +21,9 @@ export function Footer() {
               strokeLinejoin="round"
             />
           </svg>
-          <span>© 2026 Audible Lists</span>
+          <span>© 2026 audioshlf</span>
           <div className="h-3 border-r" />
-          <span>Your audiobook library manager</span>
+          <span>Your audiobook library, organized</span>
         </div>
 
         <div className="flex items-center gap-4 text-sm text-muted-foreground">

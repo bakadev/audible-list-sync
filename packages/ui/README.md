@@ -1,6 +1,6 @@
-# Audible Lists - Web Application (packages/ui)
+# audioshlf - Web Application (packages/ui)
 
-Next.js web application for syncing and managing your Audible library.
+Next.js web application for syncing and organizing your Audible library.
 
 ## Features
 

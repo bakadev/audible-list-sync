@@ -1,8 +1,8 @@
-# Audible Library Share Platform
+# audioshlf
 
 ## What Is This?
 
-A platform that lets Audible listeners share, organize, and showcase their audiobook collections. Users connect their Audible library through a browser extension, and the platform gives them tools to build curated lists and tier rankings from their personal collection.
+audioshlf is a platform that lets Audible listeners share, organize, and showcase their audiobook collections. Users connect their Audible library through a browser extension, and the platform gives them tools to build curated lists and tier rankings from their personal collection.
 
 ## The Problem
 

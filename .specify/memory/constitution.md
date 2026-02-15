@@ -1,6 +1,27 @@
 <!--
 Sync Impact Report
 ==================
+Version: 1.0.0 → 1.0.1 (PATCH - Branding clarification)
+Modified Principles: None
+Added Sections: None
+Removed Sections: None
+Changed Content:
+  - Title: "Audible Library Share Platform Constitution" → "audioshlf Constitution"
+  - Reflects official app branding as "audioshlf"
+Templates Requiring Updates:
+  ✅ .specify/templates/spec-template.md - No project name references
+  ✅ .specify/templates/plan-template.md - No project name references
+  ✅ .specify/templates/tasks-template.md - No project name references
+  ✅ .specify/templates/checklist-template.md - No project name references
+  ⚠️ PROJECT_SUMMARY.md - Still references "Audible Library Share Platform" (manual update recommended)
+Follow-up TODOs:
+  - Consider updating PROJECT_SUMMARY.md to use "audioshlf" branding
+  - Historical spec files retain original feature names (intentional - preserves context)
+-->
+
+<!--
+Sync Impact Report (Previous)
+==================
 Version: 0.0.0 → 1.0.0 (MAJOR - Initial constitution)
 Modified Principles: N/A (initial creation)
 Added Sections:
@@ -22,7 +43,7 @@ Templates Requiring Updates:
 Follow-up TODOs: None
 -->
 
-# Audible Library Share Platform Constitution
+# audioshlf Constitution
 
 ## Core Principles
 
@@ -186,4 +207,4 @@ Any feature requiring complexity that violates simplicity principles MUST be jus
 - Why the complexity is necessary
 - What simpler alternatives were considered and why they were rejected
 
-**Version**: 1.0.0 | **Ratified**: 2026-02-11 | **Last Amended**: 2026-02-11
+**Version**: 1.0.1 | **Ratified**: 2026-02-11 | **Last Amended**: 2026-02-14

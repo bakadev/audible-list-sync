@@ -234,13 +234,70 @@
       // Save normalized data
       await StorageManager.saveScrapedData(normalizedData);
 
-      // Complete!
-      OverlayUI.setComplete({
-        libraryCount: normalizedData.summary.libraryCount,
-        wishlistCount: normalizedData.summary.wishlistCount,
-        duration: normalizedData.summary.scrapeDurationMs,
-        warnings: extensionState.warnings.slice(0, 5), // Show first 5 warnings
-      });
+      // Check for sync token and auto-sync to audioshlf
+      const syncToken = SyncUtils.detectSyncToken();
+
+      if (syncToken) {
+        console.log('[AudibleExtension] Sync token detected - auto-syncing to audioshlf...');
+
+        // Show syncing state
+        OverlayUI.setScraping({
+          phase: 'Syncing to audioshlf...',
+          progress: 100,
+          scrapedCount: allTitles.length,
+          totalCount: allTitles.length,
+        });
+
+        try {
+          // Convert scraped titles to import format expected by API
+          // Note: extensionState.scrapedTitles contains basic library data
+          // (asin, title, userRating, status, progress, source)
+          const importPayload = {
+            titles: extensionState.scrapedTitles.map((title) => ({
+              asin: title.asin,
+              title: title.title,
+              authors: [], // Will be enriched from Audnex API on server
+              narrators: [],
+              source: title.source,
+              listeningProgress: title.progress || 0,
+              personalRating: title.userRating || 0,
+              dateAdded: new Date().toISOString(), // Use current date as fallback
+            }))
+          };
+
+          // Auto-POST to API
+          const result = await SyncUtils.autoSync(syncToken, importPayload.titles);
+
+          // Show success with sync stats
+          OverlayUI.setAutoSyncSuccess({
+            imported: result.imported,
+            newToCatalog: result.newToCatalog,
+            libraryCount: result.libraryCount,
+            wishlistCount: result.wishlistCount,
+            warnings: result.warnings.slice(0, 5),
+          });
+
+          console.log('[AudibleExtension] Auto-sync successful:', result);
+        } catch (error) {
+          console.error('[AudibleExtension] Auto-sync failed:', error);
+
+          // Get user-friendly error message
+          const errorInfo = SyncUtils.getErrorMessage(error);
+
+          // Show error with appropriate actions
+          OverlayUI.setAutoSyncError(errorInfo);
+        }
+      } else {
+        // No token - show normal complete state with download option
+        console.log('[AudibleExtension] No sync token detected - showing download option');
+
+        OverlayUI.setComplete({
+          libraryCount: normalizedData.summary.libraryCount,
+          wishlistCount: normalizedData.summary.wishlistCount,
+          duration: normalizedData.summary.scrapeDurationMs,
+          warnings: extensionState.warnings.slice(0, 5), // Show first 5 warnings
+        });
+      }
 
       extensionState.scraping = false;
 
