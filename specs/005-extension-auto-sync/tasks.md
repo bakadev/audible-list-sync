@@ -25,10 +25,10 @@ This is a monorepo project with multiple packages:
 
 **Purpose**: Verify existing infrastructure and prepare for feature implementation
 
-- [ ] T001 Verify packages/extension package exists with existing scraper functionality
-- [ ] T002 Verify packages/ui has existing `/api/sync/import` endpoint functional
-- [ ] T003 [P] Review existing sync token generation logic in packages/ui/src/app/api/sync/token/route.ts
-- [ ] T004 [P] Review existing library scraping logic in packages/extension/src/ to understand data structure
+- [X] T001 Verify packages/extension package exists with existing scraper functionality
+- [X] T002 Verify packages/ui has existing `/api/sync/import` endpoint functional
+- [X] T003 [P] Review existing sync token generation logic in packages/ui/src/app/api/sync/token/route.ts
+- [X] T004 [P] Review existing library scraping logic in packages/extension/src/ to understand data structure
 
 **Checkpoint**: Existing infrastructure verified - ready for feature extensions
 
@@ -40,9 +40,9 @@ This is a monorepo project with multiple packages:
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T005 [P] Create sync utility module in packages/extension/src/lib/sync.ts with token detection function
-- [ ] T006 [P] Add auto-POST function to packages/extension/src/lib/sync.ts with error handling
-- [ ] T007 Create shared sync import processing function in packages/ui/src/lib/sync-import.ts (extract from existing endpoint)
+- [X] T005 [P] Create sync utility module in packages/extension/src/lib/sync.ts with token detection function
+- [X] T006 [P] Add auto-POST function to packages/extension/src/lib/sync.ts with error handling
+- [X] T007 Create shared sync import processing function in packages/ui/src/lib/sync-import.ts (extract from existing endpoint)
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -56,13 +56,13 @@ This is a monorepo project with multiple packages:
 
 ### Implementation for User Story 1
 
-- [ ] T008 [P] [US1] Modify packages/extension/src/content.ts to detect sync token from URL on page load
-- [ ] T009 [P] [US1] Add auto-sync trigger logic to packages/extension/src/content.ts after scraping completes
-- [ ] T010 [US1] Integrate sync.ts token detection into content script workflow in packages/extension/src/content.ts
-- [ ] T011 [US1] Integrate sync.ts auto-POST into content script workflow in packages/extension/src/content.ts
-- [ ] T012 [P] [US1] Add success UI state to extension showing "Sync Complete!" message with import stats
-- [ ] T013 [P] [US1] Add error UI states for network errors, expired token, and API errors in extension
-- [ ] T014 [US1] Add "View Library" navigation button to success message linking to web app
+- [X] T008 [P] [US1] Modify packages/extension/src/content.ts to detect sync token from URL on page load
+- [X] T009 [P] [US1] Add auto-sync trigger logic to packages/extension/src/content.ts after scraping completes
+- [X] T010 [US1] Integrate sync.ts token detection into content script workflow in packages/extension/src/content.ts
+- [X] T011 [US1] Integrate sync.ts auto-POST into content script workflow in packages/extension/src/content.ts
+- [X] T012 [P] [US1] Add success UI state to extension showing "Sync Complete!" message with import stats
+- [X] T013 [P] [US1] Add error UI states for network errors, expired token, and API errors in extension
+- [X] T014 [US1] Add "View Library" navigation button to success message linking to web app
 - [ ] T015 [US1] Test auto-sync flow end-to-end with valid token from web app redirect
 
 **Checkpoint**: At this point, User Story 1 should be fully functional - users can auto-sync by clicking "Update Library"

@@ -18,8 +18,8 @@ export default async function SignInPage({
     <Card className="p-8">
       <div className="space-y-6">
         <div className="space-y-2 text-center">
-          <h1 className="text-3xl font-bold">Welcome to Audible Lists</h1>
-          <p className="text-muted-foreground">Sign in with your Google account to get started</p>
+          <h1 className="text-3xl font-bold">Welcome to audioshlf</h1>
+          <p className="text-muted-foreground">Sign in with Google to organize your audiobook library</p>
         </div>
 
         {params.error && (

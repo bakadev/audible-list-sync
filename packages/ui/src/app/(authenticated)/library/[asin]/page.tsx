@@ -98,7 +98,7 @@ export default async function TitleDetailPage({ params }: TitleDetailPageProps) 
   };
 
   return (
-    <div className="mx-auto w-full max-w-6xl space-y-4 px-4 lg:px-0">
+    <div className="mx-auto w-full max-w-6xl space-y-4 px-4 pb-8 pt-20 lg:px-0">
       {/* Back Button */}
       <Link href="/library">
         <Button variant="ghost" size="sm" className="h-8 gap-2 px-3 text-xs">
@@ -109,7 +109,7 @@ export default async function TitleDetailPage({ params }: TitleDetailPageProps) 
 
       {/* Banner/Backdrop Image */}
       <div
-        className="relative aspect-banner max-h-[55dvh] overflow-hidden border-b bg-muted md:rounded-lg lg:border"
+        className="relative h-48 overflow-hidden border-b bg-muted md:h-64 md:rounded-lg lg:h-80 lg:border"
         style={{
           backgroundImage: title.image ? `url(${title.image})` : undefined,
           backgroundSize: "cover",
@@ -140,35 +140,38 @@ export default async function TitleDetailPage({ params }: TitleDetailPageProps) 
       {/* Poster + Metadata Layout */}
       <div className="flex gap-4">
         {/* Poster (pulls up into banner) */}
-        <div className="-mt-20 w-2/5 md:w-1/3 lg:-mt-32">
-          <div className="relative aspect-poster overflow-hidden rounded-lg border bg-muted shadow">
-            {title.image ? (
-              <Image
-                src={title.image}
-                alt={title.title}
-                fill
-                className="object-cover"
-                sizes="(max-width: 768px) 40vw, 33vw"
-                priority
-              />
-            ) : (
-              <div className="flex h-full items-center justify-center">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={1.5}
-                  stroke="currentColor"
-                  className="h-16 w-16 text-muted-foreground"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"
-                  />
-                </svg>
-              </div>
-            )}
+        <div className="-mt-24 w-2/5 shrink-0 md:w-1/3 md:-mt-32 lg:-mt-40">
+          <div className="relative w-full" style={{ aspectRatio: "2/3" }}>
+            <div className="absolute inset-0 overflow-hidden rounded-lg border bg-muted shadow-lg">
+              {title.image ? (
+                <Image
+                  src={title.image}
+                  alt={title.title}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 768px) 40vw, 33vw"
+                  priority
+                  unoptimized
+                />
+              ) : (
+                <div className="flex h-full items-center justify-center">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    strokeWidth={1.5}
+                    stroke="currentColor"
+                    className="h-16 w-16 text-muted-foreground"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"
+                    />
+                  </svg>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -208,9 +211,10 @@ export default async function TitleDetailPage({ params }: TitleDetailPageProps) 
 
           {/* Description */}
           {title.summary && (
-            <p className="text-xs leading-5 text-muted-foreground md:text-sm md:leading-6">
-              {title.summary}
-            </p>
+            <div
+              className="text-xs leading-5 text-muted-foreground md:text-sm md:leading-6"
+              dangerouslySetInnerHTML={{ __html: title.summary }}
+            />
           )}
 
           {/* Action Buttons */}

@@ -7,6 +7,14 @@ import { fetchTitleMetadata } from "@/lib/audnex";
 // Maximum payload size: 50MB
 const MAX_PAYLOAD_SIZE = 50 * 1024 * 1024;
 
+// CORS headers for browser extension
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*", // Allow all origins for development
+  "Access-Control-Allow-Methods": "POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Authorization, Content-Type",
+  "Access-Control-Max-Age": "86400", // 24 hours
+};
+
 interface ImportTitle {
   asin: string;
   title: string;
@@ -43,6 +51,19 @@ interface ImportResult {
   warnings: string[];
 }
 
+// Handle preflight OPTIONS request
+export async function OPTIONS() {
+  return NextResponse.json({}, { headers: corsHeaders });
+}
+
+// Helper to add CORS headers to responses
+function jsonWithCors(data: any, options: { status?: number } = {}) {
+  return NextResponse.json(data, {
+    status: options.status,
+    headers: corsHeaders,
+  });
+}
+
 export async function POST(request: NextRequest) {
   try {
     // T031: JWT validation - extract token from Authorization header
@@ -50,7 +71,7 @@ export async function POST(request: NextRequest) {
     const token = extractBearerToken(authHeader);
 
     if (!token) {
-      return NextResponse.json(
+      return jsonWithCors(
         { error: "Missing or invalid Authorization header" },
         { status: 401 }
       );
@@ -61,7 +82,7 @@ export async function POST(request: NextRequest) {
     try {
       payload = verifySyncToken(token);
     } catch {
-      return NextResponse.json({ error: "Invalid or expired token" }, { status: 401 });
+      return jsonWithCors({ error: "Invalid or expired token" }, { status: 401 });
     }
 
     const userId = payload.sub;
@@ -73,33 +94,33 @@ export async function POST(request: NextRequest) {
     });
 
     if (!syncToken) {
-      return NextResponse.json({ error: "Token not found" }, { status: 401 });
+      return jsonWithCors({ error: "Token not found" }, { status: 401 });
     }
 
     if (syncToken.used) {
-      return NextResponse.json({ error: "Token already used" }, { status: 401 });
+      return jsonWithCors({ error: "Token already used" }, { status: 401 });
     }
 
     if (syncToken.userId !== userId) {
-      return NextResponse.json({ error: "Token user mismatch" }, { status: 401 });
+      return jsonWithCors({ error: "Token user mismatch" }, { status: 401 });
     }
 
     // T033: Payload validation
     const contentLength = request.headers.get("content-length");
     if (contentLength && parseInt(contentLength) > MAX_PAYLOAD_SIZE) {
-      return NextResponse.json({ error: "Payload too large (max 50MB)" }, { status: 400 });
+      return jsonWithCors({ error: "Payload too large (max 50MB)" }, { status: 400 });
     }
 
     let body: ImportPayload;
     try {
       body = await request.json();
     } catch {
-      return NextResponse.json({ error: "Invalid JSON payload" }, { status: 400 });
+      return jsonWithCors({ error: "Invalid JSON payload" }, { status: 400 });
     }
 
     // Validate payload structure
     if (!body.titles || !Array.isArray(body.titles)) {
-      return NextResponse.json({ error: "Missing or invalid titles array" }, { status: 400 });
+      return jsonWithCors({ error: "Missing or invalid titles array" }, { status: 400 });
     }
 
     // Validate each title has required fields
@@ -107,31 +128,31 @@ export async function POST(request: NextRequest) {
     for (let i = 0; i < body.titles.length; i++) {
       const title = body.titles[i];
       if (!title.asin || typeof title.asin !== "string") {
-        return NextResponse.json(
+        return jsonWithCors(
           { error: `Title at index ${i} missing required field: asin` },
           { status: 400 }
         );
       }
       if (!title.title || typeof title.title !== "string") {
-        return NextResponse.json(
+        return jsonWithCors(
           { error: `Title at index ${i} missing required field: title` },
           { status: 400 }
         );
       }
       if (!Array.isArray(title.authors)) {
-        return NextResponse.json(
+        return jsonWithCors(
           { error: `Title at index ${i} missing required field: authors (array)` },
           { status: 400 }
         );
       }
       if (!title.source || !["LIBRARY", "WISHLIST"].includes(title.source)) {
-        return NextResponse.json(
+        return jsonWithCors(
           { error: `Title at index ${i} missing or invalid source (must be LIBRARY or WISHLIST)` },
           { status: 400 }
         );
       }
       if (!title.dateAdded) {
-        return NextResponse.json(
+        return jsonWithCors(
           { error: `Title at index ${i} missing required field: dateAdded` },
           { status: 400 }
         );
@@ -394,7 +415,7 @@ export async function POST(request: NextRequest) {
     };
 
     // T038: Return success response
-    return NextResponse.json({
+    return jsonWithCors({
       success: true,
       imported: result.imported,
       newToCatalog: result.newToCatalog,
@@ -409,15 +430,15 @@ export async function POST(request: NextRequest) {
     if (error instanceof Error) {
       // Check for specific error types
       if (error.message.includes("Payload") || error.message.includes("Invalid")) {
-        return NextResponse.json({ error: error.message }, { status: 400 });
+        return jsonWithCors({ error: error.message }, { status: 400 });
       }
 
       if (error.message.includes("Token") || error.message.includes("Unauthorized")) {
-        return NextResponse.json({ error: error.message }, { status: 401 });
+        return jsonWithCors({ error: error.message }, { status: 401 });
       }
     }
 
     // Generic server error
-    return NextResponse.json({ error: "Internal server error during import" }, { status: 500 });
+    return jsonWithCors({ error: "Internal server error during import" }, { status: 500 });
   }
 }

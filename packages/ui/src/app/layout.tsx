@@ -16,27 +16,27 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Audible Lists - Organize & Share Your Audiobook Library",
-    template: "%s | Audible Lists",
+    default: "audioshlf - Organize Your Audiobook Library",
+    template: "%s | audioshlf",
   },
   description:
-    "Sync your Audible library, browse your audiobook collection, and create recommendation lists to share with friends.",
-  keywords: ["audible", "audiobooks", "library", "lists", "recommendations", "book tracker"],
-  authors: [{ name: "Audible Lists" }],
+    "Sync your Audible library, browse your audiobook collection, and organize your listening with audioshlf.",
+  keywords: ["audible", "audiobooks", "library", "organization", "book tracker", "audioshlf"],
+  authors: [{ name: "audioshlf" }],
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://audiblelists.com",
-    title: "Audible Lists - Organize & Share Your Audiobook Library",
+    url: "https://audioshlf.app",
+    title: "audioshlf - Organize Your Audiobook Library",
     description:
-      "Sync your Audible library, browse your audiobook collection, and create recommendation lists to share with friends.",
-    siteName: "Audible Lists",
+      "Sync your Audible library, browse your audiobook collection, and organize your listening with audioshlf.",
+    siteName: "audioshlf",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Audible Lists - Organize & Share Your Audiobook Library",
+    title: "audioshlf - Organize Your Audiobook Library",
     description:
-      "Sync your Audible library, browse your audiobook collection, and create recommendation lists to share with friends.",
+      "Sync your Audible library, browse your audiobook collection, and organize your listening with audioshlf.",
   },
 };
 
