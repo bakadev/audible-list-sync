@@ -1,17 +1,18 @@
 "use client";
 
 import { signOut } from "next-auth/react";
+import Link from "next/link";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Settings, Shield, LogOut } from "lucide-react";
+import { ThemeSwitcherMenu } from "@/components/theme-switcher-menu";
 
 interface UserNavProps {
   user: {
@@ -19,9 +20,10 @@ interface UserNavProps {
     email?: string | null;
     image?: string | null;
   };
+  isAdmin?: boolean;
 }
 
-export function UserNav({ user }: UserNavProps) {
+export function UserNav({ user, isAdmin = false }: UserNavProps) {
   const initials =
     user.name
       ?.split(" ")
@@ -30,51 +32,50 @@ export function UserNav({ user }: UserNavProps) {
       .toUpperCase() || "U";
 
   return (
-    <div className="flex items-center gap-4">
-      <div className="flex items-center gap-3">
-        <Avatar>
-          <AvatarImage src={user.image || undefined} alt={user.name || "User"} />
-          <AvatarFallback>{initials}</AvatarFallback>
-        </Avatar>
-        <div className="hidden flex-col sm:flex">
-          <p className="text-sm font-medium leading-none">{user.name}</p>
-          <p className="text-xs text-muted-foreground">{user.email}</p>
-        </div>
-      </div>
-
-      <Dialog>
-        <DialogTrigger asChild>
-          <Button variant="outline" size="sm">
-            Sign Out
-          </Button>
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Sign Out</DialogTitle>
-            <DialogDescription>
-              Are you sure you want to sign out of your account?
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                // Dialog will close automatically
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => {
-                signOut({ callbackUrl: "/" });
-              }}
-            >
-              Sign Out
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button className="focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ring rounded-full">
+          <Avatar className="cursor-pointer">
+            <AvatarImage src={user.image || undefined} alt={user.name || "User"} />
+            <AvatarFallback>{initials}</AvatarFallback>
+          </Avatar>
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-56">
+        <DropdownMenuLabel>
+          <div className="flex flex-col space-y-1">
+            <p className="text-sm font-medium leading-none">{user.name}</p>
+            <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+          </div>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <ThemeSwitcherMenu />
+        <DropdownMenuSeparator />
+        {isAdmin && (
+          <DropdownMenuItem asChild>
+            <Link href="/admin" className="cursor-pointer">
+              <Shield className="mr-2 h-4 w-4" />
+              Admin Dashboard
+            </Link>
+          </DropdownMenuItem>
+        )}
+        <DropdownMenuItem asChild>
+          <Link href="/settings" className="cursor-pointer">
+            <Settings className="mr-2 h-4 w-4" />
+            Settings
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          className="cursor-pointer text-destructive focus:text-destructive"
+          onClick={() => {
+            signOut({ callbackUrl: "/" });
+          }}
+        >
+          <LogOut className="mr-2 h-4 w-4" />
+          Logout
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

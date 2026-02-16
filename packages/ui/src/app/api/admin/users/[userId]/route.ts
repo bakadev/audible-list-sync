@@ -59,8 +59,8 @@ export async function GET(
     // Parse query parameters for filtering
     const searchParams = req.nextUrl.searchParams
 
-    // T078: Source filter (LIBRARY/WISHLIST)
-    const sourceFilter = searchParams.get('source')
+    // T078: Source filter (LIBRARY/WISHLIST/OTHER)
+    const sourceFilter = searchParams.get('source') as "LIBRARY" | "WISHLIST" | "OTHER" | null
     const sourceWhere = sourceFilter ? { source: sourceFilter } : {}
 
     // T079: Status filter (Finished/In Progress/Not Started)

@@ -177,6 +177,7 @@ model LibraryEntry {
 enum LibrarySource {
   LIBRARY
   WISHLIST
+  OTHER
 }
 
 model SyncToken {

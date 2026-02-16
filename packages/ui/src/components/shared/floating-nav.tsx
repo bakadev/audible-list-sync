@@ -4,16 +4,16 @@ import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { UserNav } from "@/components/dashboard/user-nav";
-import { ThemeToggle } from "@/components/theme-toggle";
+import { GuestNav } from "@/components/dashboard/guest-nav";
 import { Button } from "@/components/ui/button";
-import { Menu, Home, Library, Settings } from "lucide-react";
+import { Menu, Home, Library } from "lucide-react";
 
 interface FloatingNavProps {
-  user: {
+  user?: {
     name?: string | null;
     email?: string | null;
     image?: string | null;
-  };
+  } | null;
   isAdmin?: boolean;
 }
 
@@ -21,10 +21,13 @@ export function FloatingNav({ user, isAdmin = false }: FloatingNavProps) {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const navItems = [
-    { href: "/dashboard", label: "Dashboard", icon: Home },
-    { href: "/library", label: "Library", icon: Library },
-  ];
+  // Only show navigation items when user is authenticated
+  const navItems = user
+    ? [
+        { href: "/dashboard", label: "Dashboard", icon: Home },
+        { href: "/library", label: "Library", icon: Library },
+      ]
+    : [];
 
   return (
     <>
@@ -32,7 +35,7 @@ export function FloatingNav({ user, isAdmin = false }: FloatingNavProps) {
       <nav className="mx-auto hidden w-full max-w-6xl lg:my-4 lg:block">
         <div className="flex items-center justify-between rounded-full border bg-background px-4 py-2 shadow-sm">
           <div className="flex items-center gap-4">
-            <Link href="/dashboard" className="flex items-center gap-2">
+            <Link href={user ? "/dashboard" : "/"} className="flex items-center gap-2">
               <svg
                 width="24"
                 height="24"
@@ -49,6 +52,7 @@ export function FloatingNav({ user, isAdmin = false }: FloatingNavProps) {
                   strokeLinejoin="round"
                 />
               </svg>
+              <span className="text-lg font-semibold">audioshlf</span>
             </Link>
 
             <div className="flex items-center gap-1">
@@ -74,20 +78,7 @@ export function FloatingNav({ user, isAdmin = false }: FloatingNavProps) {
           </div>
 
           <div className="flex items-center gap-2">
-            <ThemeToggle />
-            {isAdmin && (
-              <Link href="/admin">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-9 w-9"
-                  title="Admin Dashboard"
-                >
-                  <Settings className="h-4 w-4" />
-                </Button>
-              </Link>
-            )}
-            <UserNav user={user} />
+            {user ? <UserNav user={user} isAdmin={isAdmin} /> : <GuestNav />}
           </div>
         </div>
       </nav>
@@ -95,7 +86,7 @@ export function FloatingNav({ user, isAdmin = false }: FloatingNavProps) {
       {/* Mobile Nav */}
       <nav className="border-b bg-background lg:hidden">
         <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-4">
-          <Link href="/dashboard" className="flex items-center gap-2">
+          <Link href={user ? "/dashboard" : "/"} className="flex items-center gap-2">
             <svg
               width="24"
               height="24"
@@ -112,34 +103,26 @@ export function FloatingNav({ user, isAdmin = false }: FloatingNavProps) {
                 strokeLinejoin="round"
               />
             </svg>
+            <span className="text-lg font-semibold">audioshlf</span>
           </Link>
 
           <div className="flex items-center gap-2">
-            <ThemeToggle />
-            {isAdmin && (
-              <Link href="/admin">
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-9 w-9"
-                  title="Admin Dashboard"
-                >
-                  <Settings className="h-4 w-4" />
-                </Button>
-              </Link>
+            {user ? (
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-9 w-9"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              >
+                <Menu className="h-4 w-4" />
+              </Button>
+            ) : (
+              <GuestNav />
             )}
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-9 w-9"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            >
-              <Menu className="h-4 w-4" />
-            </Button>
           </div>
         </div>
 
-        {mobileMenuOpen && (
+        {mobileMenuOpen && user && (
           <div className="border-t px-4 py-4">
             <div className="flex flex-col gap-2">
               {navItems.map((item) => {
@@ -159,7 +142,7 @@ export function FloatingNav({ user, isAdmin = false }: FloatingNavProps) {
                 );
               })}
               <div className="mt-2 border-t pt-4">
-                <UserNav user={user} />
+                <UserNav user={user} isAdmin={isAdmin} />
               </div>
             </div>
           </div>

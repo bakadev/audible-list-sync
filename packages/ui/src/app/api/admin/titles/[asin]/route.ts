@@ -323,11 +323,9 @@ export async function PUT(
         authors: updatedTitle.authors.map((a) => ({
           asin: a.author.asin,
           name: a.author.name,
-          position: a.position,
         })),
         narrators: updatedTitle.narrators.map((n) => ({
           name: n.narrator.name,
-          position: n.position,
         })),
         genres: updatedTitle.genres.map((g) => ({
           asin: g.genre.asin,

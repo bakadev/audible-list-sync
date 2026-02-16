@@ -13,8 +13,9 @@ export async function GET(request: NextRequest) {
     const userId = session.user.id;
     const { searchParams } = new URL(request.url);
     const search = searchParams.get("search") || "";
+    const source = searchParams.get("source") as "LIBRARY" | "WISHLIST" | "OTHER" | null;
     const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "1000"); // Increased from 50 to support large libraries
+    const limit = parseInt(searchParams.get("limit") || "24"); // Changed to 24 for infinite scroll
     const skip = (page - 1) * limit;
 
     // Build search filter
@@ -30,11 +31,15 @@ export async function GET(request: NextRequest) {
         }
       : {};
 
+    // Build source filter
+    const sourceFilter = source ? { source } : {};
+
     // Query user library with title relations
     const [items, total] = await Promise.all([
       prisma.libraryEntry.findMany({
         where: {
           userId,
+          ...sourceFilter,
           ...searchFilter,
         },
         include: {
@@ -68,6 +73,7 @@ export async function GET(request: NextRequest) {
       prisma.libraryEntry.count({
         where: {
           userId,
+          ...sourceFilter,
           ...searchFilter,
         },
       }),

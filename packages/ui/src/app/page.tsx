@@ -2,10 +2,13 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Container } from "@/components/ui/container";
+import { FloatingNav } from "@/components/shared/floating-nav";
 
 export default function Home() {
   return (
     <div className="flex min-h-screen flex-col">
+      <FloatingNav />
+
       {/* Hero Section */}
       <section>
         <Container className="py-16 md:py-24 lg:py-32 max-w-4xl space-y-8 px-4">

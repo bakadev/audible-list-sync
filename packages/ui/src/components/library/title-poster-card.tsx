@@ -9,7 +9,7 @@ interface TitlePosterCardProps {
   coverImageUrl?: string | null;
   rating?: number | null;
   duration?: number | null;
-  source: "LIBRARY" | "WISHLIST";
+  source: "LIBRARY" | "WISHLIST" | "OTHER";
   listeningProgress?: number;
 }
 
@@ -45,6 +45,8 @@ export function TitlePosterCard({
               fill
               className="object-cover transition-transform group-hover:scale-105"
               sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 20vw"
+              loading="lazy"
+              quality={75}
             />
           ) : (
             <div className="flex h-full items-center justify-center">
@@ -78,7 +80,7 @@ export function TitlePosterCard({
           {/* Source Badge */}
           <div className="absolute right-2 top-2">
             <Badge
-              variant={source === "LIBRARY" ? "default" : "outline"}
+              variant={source === "LIBRARY" ? "default" : source === "WISHLIST" ? "outline" : "secondary"}
               className="text-xs shadow-sm"
             >
               {source}
