@@ -35,7 +35,7 @@ Create a `.env` file in `packages/ui/` with the following variables:
 DATABASE_URL="postgresql://audible:audible_dev_password@localhost:5432/audible_lists?schema=public"
 
 # NextAuth Configuration
-NEXTAUTH_URL="http://localhost:3003"
+NEXTAUTH_URL="http://localhost:3000"
 NEXTAUTH_SECRET="your-nextauth-secret-here-generate-with-openssl-rand-base64-32"
 
 # Google OAuth
@@ -62,7 +62,7 @@ openssl rand -base64 32
 2. Create a new project or select existing
 3. Enable Google+ API
 4. Create OAuth 2.0 credentials (Web application)
-5. Add authorized redirect URI: `http://localhost:3003/api/auth/callback/google`
+5. Add authorized redirect URI: `http://localhost:3000/api/auth/callback/google`
 6. Copy Client ID and Client Secret to `.env`
 
 ## Database Setup
@@ -116,7 +116,7 @@ pnpm db:migrate
 pnpm dev
 ```
 
-The application will be available at [http://localhost:3003](http://localhost:3003)
+The application will be available at [http://localhost:3000](http://localhost:3000)
 
 ## Available Scripts
 
@@ -213,7 +213,7 @@ See `DATABASE_SETUP.md` and `test-import.sh` for testing the import endpoint:
 
 ```bash
 # Generate token via dashboard UI or API
-curl -X POST http://localhost:3003/api/sync/token \
+curl -X POST http://localhost:3000/api/sync/token \
   -H "Cookie: your-session-cookie"
 
 # Test import with sample payload
