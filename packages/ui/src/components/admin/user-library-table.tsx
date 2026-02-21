@@ -19,15 +19,6 @@ interface LibraryEntry {
   progress: number
   timeLeft: string | null
   source: string
-  title: {
-    asin: string
-    title: string
-    subtitle: string | null
-    image: string | null
-    runtimeLengthMin: number | null
-    authors: Array<{ name: string; position: number }>
-    narrators: Array<{ name: string; position: number }>
-  }
 }
 
 interface UserLibraryTableProps {
@@ -191,16 +182,7 @@ export default function UserLibraryTable({
           <thead className="bg-gray-50">
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Title
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 ASIN
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Authors
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Narrators
               </th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Rating
@@ -219,7 +201,7 @@ export default function UserLibraryTable({
           <tbody className="bg-white divide-y divide-gray-200">
             {loading ? (
               <tr>
-                <td colSpan={8} className="px-6 py-4 text-center">
+                <td colSpan={5} className="px-6 py-4 text-center">
                   <div className="flex justify-center">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
                   </div>
@@ -228,7 +210,7 @@ export default function UserLibraryTable({
             ) : library.length === 0 ? (
               <tr>
                 <td
-                  colSpan={8}
+                  colSpan={5}
                   className="px-6 py-4 text-center text-sm text-gray-500"
                 >
                   No library entries found
@@ -237,35 +219,8 @@ export default function UserLibraryTable({
             ) : (
               library.map((entry) => (
                 <tr key={entry.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4">
-                    <div className="flex items-center">
-                      {entry.title.image && (
-                        <img
-                          src={entry.title.image}
-                          alt={entry.title.title}
-                          className="h-12 w-8 object-cover rounded mr-3"
-                        />
-                      )}
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">
-                          {entry.title.title}
-                        </div>
-                        {entry.title.subtitle && (
-                          <div className="text-xs text-gray-500">
-                            {entry.title.subtitle}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-xs font-mono text-gray-500">
                     {entry.titleAsin}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-900">
-                    {entry.title.authors.map((a) => a.name).join(', ') || '-'}
-                  </td>
-                  <td className="px-6 py-4 text-sm text-gray-900">
-                    {entry.title.narrators.map((n) => n.name).join(', ') || '-'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {entry.userRating > 0 ? `${entry.userRating}/5` : '-'}

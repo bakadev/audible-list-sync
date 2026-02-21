@@ -2,6 +2,7 @@ import { Metadata } from "next";
 import { auth } from "@/lib/auth";
 import { notFound } from "next/navigation";
 import prisma from "@/lib/prisma";
+import { fetchTitleMetadata } from "@/lib/audnex";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
@@ -15,25 +16,13 @@ interface TitleDetailPageProps {
 
 export async function generateMetadata({ params }: TitleDetailPageProps): Promise<Metadata> {
   const { asin } = await params;
-
-  const title = await prisma.title.findUnique({
-    where: { asin },
-    include: {
-      authors: {
-        include: {
-          author: true,
-        },
-      },
-    },
-  });
+  const title = await fetchTitleMetadata(asin);
 
   if (!title) {
-    return {
-      title: "Title Not Found",
-    };
+    return { title: "Title Not Found" };
   }
 
-  const authorNames = title.authors.map((a) => a.author.name);
+  const authorNames = title.authors?.map((a) => a.name) || [];
   return {
     title: title.title,
     description: title.summary || `${title.title} by ${authorNames.join(", ")}`,
@@ -48,53 +37,35 @@ export default async function TitleDetailPage({ params }: TitleDetailPageProps) 
     return null;
   }
 
-  const title = await prisma.title.findUnique({
-    where: { asin },
-    include: {
-      authors: {
-        include: {
-          author: true,
-        },
-      },
-      narrators: {
-        include: {
-          narrator: true,
-        },
-      },
-      genres: {
-        include: {
-          genre: true,
-        },
-      },
-      series: true,
-    },
-  });
+  const [title, userLibraryEntry] = await Promise.all([
+    fetchTitleMetadata(asin),
+    prisma.libraryEntry.findFirst({
+      where: { userId: session.user.id, titleAsin: asin },
+    }),
+  ]);
 
   if (!title) {
     notFound();
   }
 
-  const userLibraryEntry = await prisma.libraryEntry.findFirst({
-    where: {
-      userId: session.user.id,
-      titleAsin: asin,
-    },
-  });
+  const authorNames = title.authors?.map((a) => a.name) || [];
+  const narratorNames = title.narrators?.map((n) => n.name) || [];
+  const genres = title.genres || [];
 
-  const formatDuration = (minutes: number | null) => {
+  const formatDuration = (minutes: number | null | undefined) => {
     if (!minutes) return null;
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     return `${hours}h ${mins}m`;
   };
 
-  const formatDate = (date: Date | null) => {
-    if (!date) return null;
+  const formatDate = (dateStr: string | null | undefined) => {
+    if (!dateStr) return null;
     return new Intl.DateTimeFormat("en-US", {
       month: "long",
       day: "numeric",
       year: "numeric",
-    }).format(date);
+    }).format(new Date(dateStr));
   };
 
   return (
@@ -186,15 +157,15 @@ export default async function TitleDetailPage({ params }: TitleDetailPageProps) 
           <h1 className="text-lg font-bold leading-tight md:text-4xl">{title.title}</h1>
 
           {/* Genre/Category Badges */}
-          {title.genres.length > 0 && (
+          {genres.length > 0 && (
             <div className="flex flex-wrap gap-2">
-              {title.genres.map((g) => (
+              {genres.map((g) => (
                 <Badge
-                  key={g.genre.asin}
+                  key={g.asin}
                   variant="outline"
                   className="rounded-md border px-2.5 py-0.5 text-xs font-semibold"
                 >
-                  {g.genre.name}
+                  {g.name}
                 </Badge>
               ))}
             </div>
@@ -253,16 +224,16 @@ export default async function TitleDetailPage({ params }: TitleDetailPageProps) 
         <TabsContent value="details" className="mt-4 space-y-4">
           {/* Metadata Grid */}
           <div className="space-y-3 rounded-lg border bg-card p-4">
-            {title.authors.length > 0 && (
+            {authorNames.length > 0 && (
               <div className="flex gap-2 text-sm">
                 <span className="font-medium text-muted-foreground">Authors:</span>
-                <span>{title.authors.map(a => a.author.name).join(", ")}</span>
+                <span>{authorNames.join(", ")}</span>
               </div>
             )}
-            {title.narrators.length > 0 && (
+            {narratorNames.length > 0 && (
               <div className="flex gap-2 text-sm">
                 <span className="font-medium text-muted-foreground">Narrated by:</span>
-                <span>{title.narrators.map(n => n.narrator.name).join(", ")}</span>
+                <span>{narratorNames.join(", ")}</span>
               </div>
             )}
             {title.runtimeLengthMin && (
@@ -281,6 +252,15 @@ export default async function TitleDetailPage({ params }: TitleDetailPageProps) 
               <div className="flex gap-2 text-sm">
                 <span className="font-medium text-muted-foreground">Language:</span>
                 <span>{title.language}</span>
+              </div>
+            )}
+            {title.seriesPrimary && (
+              <div className="flex gap-2 text-sm">
+                <span className="font-medium text-muted-foreground">Series:</span>
+                <span>
+                  {title.seriesPrimary.name}
+                  {title.seriesPrimary.position && `, Book ${title.seriesPrimary.position}`}
+                </span>
               </div>
             )}
           </div>

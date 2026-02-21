@@ -67,35 +67,12 @@ export async function GET(
     const statusFilter = searchParams.get('status')
     const statusWhere = statusFilter ? { status: statusFilter } : {}
 
-    // T076: Fetch user's full library with LibraryEntry records
-    // T077: Include Title metadata with authors, narrators, genres, series
+    // T076: Fetch user's library entries (metadata served by Audnexus API)
     const library = await prisma.libraryEntry.findMany({
       where: {
         userId,
         ...sourceWhere,
         ...statusWhere,
-      },
-      include: {
-        title: {
-          include: {
-            authors: {
-              include: {
-                author: true,
-              },
-            },
-            narrators: {
-              include: {
-                narrator: true,
-              },
-            },
-            genres: {
-              include: {
-                genre: true,
-              },
-            },
-            series: true,
-          },
-        },
       },
       orderBy: {
         updatedAt: 'desc',
@@ -124,50 +101,6 @@ export async function GET(
       },
     }
 
-    // Format library entries for response
-    const formattedLibrary = library.map((entry) => ({
-      id: entry.id,
-      titleAsin: entry.titleAsin,
-      userRating: entry.userRating,
-      status: entry.status,
-      progress: entry.progress,
-      timeLeft: entry.timeLeft,
-      source: entry.source,
-      createdAt: entry.createdAt,
-      updatedAt: entry.updatedAt,
-      title: {
-        asin: entry.title.asin,
-        title: entry.title.title,
-        subtitle: entry.title.subtitle,
-        description: entry.title.description,
-        summary: entry.title.summary,
-        image: entry.title.image,
-        runtimeLengthMin: entry.title.runtimeLengthMin,
-        rating: entry.title.rating,
-        releaseDate: entry.title.releaseDate,
-        publisherName: entry.title.publisherName,
-        authors: entry.title.authors.map((a) => ({
-          asin: a.author.asin,
-          name: a.author.name,
-        })),
-        narrators: entry.title.narrators.map((n) => ({
-          name: n.narrator.name,
-        })),
-        genres: entry.title.genres.map((g) => ({
-          asin: g.genre.asin,
-          name: g.genre.name,
-          type: g.genre.type,
-        })),
-        series: entry.title.series
-          ? {
-              asin: entry.title.series.asin,
-              name: entry.title.series.name,
-              position: entry.title.seriesPosition,
-            }
-          : null,
-      },
-    }))
-
     // T081: Return UserDetailsResponse with user, library, and summary
     return NextResponse.json({
       user: {
@@ -180,7 +113,7 @@ export async function GET(
         libraryCount: user._count.libraryEntries,
         lastImportAt: user.syncHistory[0]?.syncedAt || null,
       },
-      library: formattedLibrary,
+      library,
       summary,
     })
   } catch (error) {

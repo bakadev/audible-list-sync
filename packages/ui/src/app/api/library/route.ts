@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
+import { fetchTitleMetadataBatch, AudnexTitle } from "@/lib/audnex";
 
 export async function GET(request: NextRequest) {
   try {
@@ -15,100 +16,107 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get("search") || "";
     const source = searchParams.get("source") as "LIBRARY" | "WISHLIST" | "OTHER" | null;
     const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "24"); // Changed to 24 for infinite scroll
-    const skip = (page - 1) * limit;
-
-    // Build search filter
-    const searchFilter = search
-      ? {
-          title: {
-            OR: [
-              { title: { contains: search, mode: "insensitive" as const } },
-              { authors: { some: { author: { name: { contains: search, mode: "insensitive" as const } } } } },
-              { narrators: { some: { narrator: { name: { contains: search, mode: "insensitive" as const } } } } },
-            ],
-          },
-        }
-      : {};
+    const limit = parseInt(searchParams.get("limit") || "24");
 
     // Build source filter
     const sourceFilter = source ? { source } : {};
 
-    // Query user library with title relations
-    const [items, total] = await Promise.all([
+    if (search) {
+      // Search: fetch all user's ASINs, batch-fetch metadata, filter in-memory
+      const allEntries = await prisma.libraryEntry.findMany({
+        where: { userId, ...sourceFilter },
+        orderBy: { updatedAt: "desc" },
+      });
+
+      const asins = allEntries.map((e) => e.titleAsin);
+      const metadataResults = await fetchTitleMetadataBatch(asins);
+
+      const metadataMap = new Map<string, AudnexTitle>();
+      asins.forEach((asin, i) => {
+        const meta = metadataResults[i];
+        if (meta) metadataMap.set(asin, meta);
+      });
+
+      // Filter by search term across title, author, narrator
+      const searchLower = search.toLowerCase();
+      const filtered = allEntries.filter((entry) => {
+        const meta = metadataMap.get(entry.titleAsin);
+        if (!meta) return false;
+        if (meta.title.toLowerCase().includes(searchLower)) return true;
+        if (meta.authors?.some((a) => a.name.toLowerCase().includes(searchLower))) return true;
+        if (meta.narrators?.some((n) => n.name.toLowerCase().includes(searchLower))) return true;
+        return false;
+      });
+
+      const total = filtered.length;
+      const skip = (page - 1) * limit;
+      const pageEntries = filtered.slice(skip, skip + limit);
+
+      const transformedItems = pageEntries.map((item) =>
+        transformEntry(item, metadataMap.get(item.titleAsin))
+      );
+
+      return NextResponse.json({
+        items: transformedItems,
+        pagination: { page, limit, total, pages: Math.ceil(total / limit) },
+      });
+    }
+
+    // No search: paginate at the DB level, fetch metadata only for current page
+    const [entries, total] = await Promise.all([
       prisma.libraryEntry.findMany({
-        where: {
-          userId,
-          ...sourceFilter,
-          ...searchFilter,
-        },
-        include: {
-          title: {
-            include: {
-              authors: {
-                include: {
-                  author: true,
-                },
-              },
-              narrators: {
-                include: {
-                  narrator: true,
-                },
-              },
-              genres: {
-                include: {
-                  genre: true,
-                },
-              },
-              series: true,
-            },
-          },
-        },
-        orderBy: {
-          updatedAt: "desc",
-        },
+        where: { userId, ...sourceFilter },
+        orderBy: { updatedAt: "desc" },
         take: limit,
-        skip,
+        skip: (page - 1) * limit,
       }),
       prisma.libraryEntry.count({
-        where: {
-          userId,
-          ...sourceFilter,
-          ...searchFilter,
-        },
+        where: { userId, ...sourceFilter },
       }),
     ]);
 
-    // Transform the data to match the expected client format
-    const transformedItems = items.map((item) => ({
-      id: item.id,
-      source: item.source,
-      progress: item.progress,
-      userRating: item.userRating,
-      updatedAt: item.updatedAt.toISOString(),
-      title: {
-        asin: item.title.asin,
-        title: item.title.title,
-        subtitle: item.title.subtitle,
-        authors: item.title.authors.map((a) => a.author.name),
-        narrators: item.title.narrators.map((n) => n.narrator.name),
-        runtimeLengthMin: item.title.runtimeLengthMin,
-        image: item.title.image,
-        rating: item.title.rating ? Number(item.title.rating) : null,
-      },
-    }));
+    const pageAsins = entries.map((e) => e.titleAsin);
+    const metadataResults = await fetchTitleMetadataBatch(pageAsins);
+
+    const metadataMap = new Map<string, AudnexTitle>();
+    pageAsins.forEach((asin, i) => {
+      const meta = metadataResults[i];
+      if (meta) metadataMap.set(asin, meta);
+    });
+
+    const transformedItems = entries.map((item) =>
+      transformEntry(item, metadataMap.get(item.titleAsin))
+    );
 
     return NextResponse.json({
       items: transformedItems,
-      pagination: {
-        page,
-        limit,
-        total,
-        pages: Math.ceil(total / limit),
-      },
+      pagination: { page, limit, total, pages: Math.ceil(total / limit) },
     });
   } catch (error) {
     console.error("Error fetching library:", error);
     return NextResponse.json({ error: "Failed to fetch library" }, { status: 500 });
   }
+}
+
+function transformEntry(
+  item: { id: string; source: string; progress: number; userRating: number; updatedAt: Date; titleAsin: string },
+  meta: AudnexTitle | undefined
+) {
+  return {
+    id: item.id,
+    source: item.source,
+    progress: item.progress,
+    userRating: item.userRating,
+    updatedAt: item.updatedAt.toISOString(),
+    title: {
+      asin: item.titleAsin,
+      title: meta?.title || item.titleAsin,
+      subtitle: meta?.subtitle || null,
+      authors: meta?.authors?.map((a) => a.name) || [],
+      narrators: meta?.narrators?.map((n) => n.name) || [],
+      runtimeLengthMin: meta?.runtimeLengthMin || null,
+      image: meta?.image || null,
+      rating: meta?.rating ? Number(meta.rating) : null,
+    },
+  };
 }

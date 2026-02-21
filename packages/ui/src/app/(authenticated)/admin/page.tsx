@@ -16,9 +16,6 @@ export default async function AdminDashboardPage() {
   // T058: Display total users count
   const totalUsers = await prisma.user.count()
 
-  // T059: Display total titles count
-  const totalTitles = await prisma.title.count()
-
   // T060: Display recent import operations (last 10)
   const recentImports = await prisma.syncHistory.findMany({
     take: 10,
@@ -47,18 +44,6 @@ export default async function AdminDashboardPage() {
           <CardContent>
             <p className="text-sm text-muted-foreground">
               Registered users in the system
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardDescription>Total Titles</CardDescription>
-            <CardTitle className="text-3xl md:text-4xl">{totalTitles}</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Unique titles in the catalog
             </p>
           </CardContent>
         </Card>

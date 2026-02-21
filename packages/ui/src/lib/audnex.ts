@@ -1,18 +1,22 @@
 /**
- * Audnex API Client
+ * Audnexus API Client
  *
- * Fetches audiobook metadata from Audnex API (https://api.audnex.us)
- * Implements retry logic with exponential backoff for resilience
+ * Fetches audiobook metadata from local Audnexus instance.
+ * Configure via AUDNEXUS_URL env var (defaults to http://localhost:3001).
+ * Implements retry logic with exponential backoff for resilience.
  */
+
+const AUDNEXUS_BASE_URL = process.env.AUDNEXUS_URL || 'http://localhost:3001'
 
 export interface AudnexTitle {
   asin: string
   title: string
   subtitle?: string
   authors?: Array<{ asin?: string; name: string }>
-  narrators?: Array<{ name: string }>
-  seriesPrimary?: { asin: string; name: string; position: string }
-  genres?: Array<{ asin: string; name: string; type: 'genre' | 'tag' }>
+  narrators?: Array<{ asin?: string; name: string }>
+  seriesPrimary?: { asin?: string; name: string; position?: string }
+  seriesSecondary?: { asin?: string; name: string; position?: string }
+  genres?: Array<{ asin: string; name: string; type: string }>
   runtimeLengthMin?: number
   description?: string
   summary?: string
@@ -55,7 +59,7 @@ export async function fetchTitleMetadata(
   const { retries = 3, retryDelay = 1000 } = options
 
   try {
-    const response = await fetch(`https://api.audnex.us/books/${asin}`)
+    const response = await fetch(`${AUDNEXUS_BASE_URL}/books/${asin}`)
 
     // Handle rate limits and server errors with retry
     if (!response.ok) {
