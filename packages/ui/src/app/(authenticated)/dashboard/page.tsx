@@ -42,16 +42,21 @@ export default async function DashboardPage() {
   ]);
 
   // Get library, wishlist, and list counts
-  const [libraryCount, wishlistCount, listCount] = await Promise.all([
+  const [libraryCount, wishlistCount, otherCount, listCount] = await Promise.all([
     prisma.libraryEntry.count({
       where: { userId, source: "LIBRARY" },
     }),
     prisma.libraryEntry.count({
       where: { userId, source: "WISHLIST" },
     }),
-    prisma.list.count({
-      where: { userId },
-    }).catch(() => 0), // Graceful fallback if List table doesn't exist yet
+    prisma.libraryEntry.count({
+      where: { userId, source: "OTHER" },
+    }),
+    prisma.list
+      .count({
+        where: { userId },
+      })
+      .catch(() => 0), // Graceful fallback if List table doesn't exist yet
   ]);
 
   const totalItems = libraryStats._count.id;
@@ -67,29 +72,6 @@ export default async function DashboardPage() {
           <p className="text-base text-muted-foreground">
             Manage your Audible library and create recommendation lists.
           </p>
-        </div>
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          <SyncStatus
-            lastSyncedAt={lastSync?.syncedAt?.toISOString() || null}
-            totalItems={totalItems}
-            libraryCount={libraryCount}
-            wishlistCount={wishlistCount}
-          />
-
-          <Card className="p-6">
-            <div className="space-y-4">
-              <h3 className="text-lg font-semibold">
-                {hasSyncedBefore ? "Update Your Library" : "Connect Extension"}
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                {hasSyncedBefore
-                  ? "Sync your latest Audible library changes."
-                  : "Connect the browser extension to sync your Audible library for the first time."}
-              </p>
-              <ConnectExtensionButton hasSyncedBefore={hasSyncedBefore} />
-            </div>
-          </Card>
         </div>
 
         <div className="grid gap-4 sm:grid-cols-2">
@@ -116,12 +98,35 @@ export default async function DashboardPage() {
                 </div>
                 <p className="text-sm text-muted-foreground">
                   {listCount > 0
-                    ? `You have ${listCount} ${listCount === 1 ? 'list' : 'lists'}. Edit, reorder, or share them.`
-                    : 'View and manage your recommendation lists and tier rankings.'}
+                    ? `You have ${listCount} ${listCount === 1 ? "list" : "lists"}. Edit, reorder, or share them.`
+                    : "View and manage your recommendation lists and tier rankings."}
                 </p>
               </div>
             </Card>
           </Link>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <SyncStatus
+            lastSyncedAt={lastSync?.syncedAt?.toISOString() || null}
+            totalItems={totalItems}
+            libraryCount={libraryCount}
+            wishlistCount={wishlistCount}
+            otherCount={otherCount}
+          />
+
+          <Card className="p-6">
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold">
+                {hasSyncedBefore ? "Update Your Library" : "Connect Extension"}
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                {hasSyncedBefore
+                  ? "Sync your latest Audible library changes."
+                  : "Connect the browser extension to sync your Audible library for the first time."}
+              </p>
+              <ConnectExtensionButton hasSyncedBefore={hasSyncedBefore} />
+            </div>
+          </Card>
         </div>
 
         <ManualAddTitle />

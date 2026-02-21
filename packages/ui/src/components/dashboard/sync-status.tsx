@@ -8,6 +8,7 @@ interface SyncStatusProps {
   totalItems: number;
   libraryCount: number;
   wishlistCount: number;
+  otherCount: number;
 }
 
 export function SyncStatus({
@@ -15,6 +16,7 @@ export function SyncStatus({
   totalItems,
   libraryCount,
   wishlistCount,
+  otherCount,
 }: SyncStatusProps) {
   const hasData = totalItems > 0;
   const syncDate = lastSyncedAt ? new Date(lastSyncedAt) : null;
@@ -47,7 +49,7 @@ export function SyncStatus({
         <p className="text-sm text-muted-foreground">{state.description}</p>
 
         {hasData && (
-          <div className="grid grid-cols-3 gap-4 pt-2">
+          <div className="grid grid-cols-4 gap-4 pt-2">
             <div className="space-y-1">
               <p className="text-3xl font-bold">{totalItems}</p>
               <p className="text-xs text-muted-foreground">Total Items</p>
@@ -59,6 +61,10 @@ export function SyncStatus({
             <div className="space-y-1">
               <p className="text-3xl font-bold">{wishlistCount}</p>
               <p className="text-xs text-muted-foreground">Wishlist</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-3xl font-bold">{otherCount}</p>
+              <p className="text-xs text-muted-foreground">Other</p>
             </div>
           </div>
         )}
