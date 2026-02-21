@@ -4,8 +4,10 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { TitlePosterCard } from "./title-poster-card";
 import { SearchBar } from "./search-bar";
 import { EmptyState } from "./empty-state";
+import { ManualEmptyState } from "./manual-empty-state";
 import { LibrarySkeleton } from "./library-skeleton";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { toast } from "sonner";
 
 type LibrarySource = "LIBRARY" | "WISHLIST" | "OTHER";
 
@@ -92,6 +94,22 @@ export function LibraryContent() {
     []
   );
 
+  const handleRemove = useCallback(async (entryId: string) => {
+    try {
+      const res = await fetch(`/api/library/${entryId}`, { method: "DELETE" });
+
+      if (!res.ok) {
+        toast.error("Failed to remove title");
+        return;
+      }
+
+      setItems((prev) => prev.filter((item) => item.id !== entryId));
+      toast.success("Title removed from library");
+    } catch {
+      toast.error("Something went wrong");
+    }
+  }, []);
+
   // Reset and fetch when tab or search changes
   useEffect(() => {
     setPage(1);
@@ -139,6 +157,9 @@ export function LibraryContent() {
     }
 
     if (items.length === 0 && !searchQuery) {
+      if (activeTab === "OTHER") {
+        return <ManualEmptyState />;
+      }
       return <EmptyState />;
     }
 
@@ -169,6 +190,7 @@ export function LibraryContent() {
               rating={item.title.rating}
               source={item.source}
               listeningProgress={item.progress}
+              onRemove={() => handleRemove(item.id)}
             />
           ))}
         </div>
@@ -199,7 +221,7 @@ export function LibraryContent() {
         <TabsList>
           <TabsTrigger value="LIBRARY">Library</TabsTrigger>
           <TabsTrigger value="WISHLIST">Wishlist</TabsTrigger>
-          <TabsTrigger value="OTHER">Other</TabsTrigger>
+          <TabsTrigger value="OTHER">Manual</TabsTrigger>
         </TabsList>
 
         <TabsContent value="LIBRARY" className="mt-6">

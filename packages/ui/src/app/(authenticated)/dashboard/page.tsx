@@ -4,7 +4,11 @@ import prisma from "@/lib/prisma";
 import { SyncStatus } from "@/components/dashboard/sync-status";
 import { ConnectExtensionButton } from "@/components/dashboard/connect-extension-button";
 import { SyncHistoryTable } from "@/components/dashboard/sync-history-table";
+import { ManualAddTitle } from "@/components/dashboard/manual-add-title";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Plus, ListOrdered } from "lucide-react";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -37,14 +41,17 @@ export default async function DashboardPage() {
     }),
   ]);
 
-  // Get library and wishlist counts
-  const [libraryCount, wishlistCount] = await Promise.all([
+  // Get library, wishlist, and list counts
+  const [libraryCount, wishlistCount, listCount] = await Promise.all([
     prisma.libraryEntry.count({
       where: { userId, source: "LIBRARY" },
     }),
     prisma.libraryEntry.count({
       where: { userId, source: "WISHLIST" },
     }),
+    prisma.list.count({
+      where: { userId },
+    }).catch(() => 0), // Graceful fallback if List table doesn't exist yet
   ]);
 
   const totalItems = libraryStats._count.id;
@@ -84,6 +91,40 @@ export default async function DashboardPage() {
             </div>
           </Card>
         </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <Link href="/lists/new">
+            <Card className="p-6 transition-colors hover:bg-muted/50">
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <Plus className="h-5 w-5 text-primary" />
+                  <h3 className="text-lg font-semibold">Create New List</h3>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Create a recommendation list or tier ranking from your audiobook library.
+                </p>
+              </div>
+            </Card>
+          </Link>
+
+          <Link href="/lists">
+            <Card className="p-6 transition-colors hover:bg-muted/50">
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <ListOrdered className="h-5 w-5 text-primary" />
+                  <h3 className="text-lg font-semibold">Manage Lists</h3>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  {listCount > 0
+                    ? `You have ${listCount} ${listCount === 1 ? 'list' : 'lists'}. Edit, reorder, or share them.`
+                    : 'View and manage your recommendation lists and tier rankings.'}
+                </p>
+              </div>
+            </Card>
+          </Link>
+        </div>
+
+        <ManualAddTitle />
 
         {!hasSyncedBefore && (
           <Card className="p-6 bg-muted/50">

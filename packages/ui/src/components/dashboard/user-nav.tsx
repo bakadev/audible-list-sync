@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Settings, Shield, LogOut } from "lucide-react";
+import { Settings, Shield, LogOut, ListOrdered } from "lucide-react";
 import { ThemeSwitcherMenu } from "@/components/theme-switcher-menu";
 
 interface UserNavProps {
@@ -59,6 +59,12 @@ export function UserNav({ user, isAdmin = false }: UserNavProps) {
             </Link>
           </DropdownMenuItem>
         )}
+        <DropdownMenuItem asChild>
+          <Link href="/lists" className="cursor-pointer">
+            <ListOrdered className="mr-2 h-4 w-4" />
+            My Lists
+          </Link>
+        </DropdownMenuItem>
         <DropdownMenuItem asChild>
           <Link href="/settings" className="cursor-pointer">
             <Settings className="mr-2 h-4 w-4" />

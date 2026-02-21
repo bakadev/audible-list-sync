@@ -11,6 +11,8 @@ Auto-generated from all feature plans. Last updated: 2026-02-11
 - PostgreSQL 14+ (via Docker Compose) (004-admin-dashboard)
 - TypeScript 5.9+ (extension & Next.js web app) (005-extension-auto-sync)
 - PostgreSQL (existing database, no schema changes needed) (005-extension-auto-sync)
+- TypeScript 5.x (strict mode), JavaScript ES2020 + Next.js 16 (App Router), React 19, Prisma 6, TailwindCSS 4, shadcn/ui, @hello-pangea/dnd (drag-and-drop) (006-user-lists)
+- PostgreSQL 14+ (via Docker Compose), Audnexus API (book metadata) (006-user-lists)
 
 - TypeScript 5.x (strict mode) for ui/shared packages, JavaScript ES2020 for extension + Next.js 14+ (App Router), Auth.js (NextAuth), Prisma 5+, Tailwind CSS, shadcn/ui (001-library-sync-mvp)
 
@@ -31,9 +33,9 @@ npm test && npm run lint
 TypeScript 5.x (strict mode) for ui/shared packages, JavaScript ES2020 for extension: Follow standard conventions
 
 ## Recent Changes
+- 006-user-lists: Added TypeScript 5.x (strict mode), JavaScript ES2020 + Next.js 16 (App Router), React 19, Prisma 6, TailwindCSS 4, shadcn/ui, @hello-pangea/dnd (drag-and-drop)
 - 005-extension-auto-sync: Added TypeScript 5.9+ (extension & Next.js web app)
 - 004-admin-dashboard: Added TypeScript 5.x (Next.js 19, React 19) + Next.js 19, React 19, Prisma ORM, NextAuth, TailwindCSS, shadcn/ui
-- 003-simplify-extension: Added JavaScript ES6+ (browser environment, Chrome Manifest V3) + Chrome Extension APIs (storage, content scripts), React 19 (CDN for overlay UI)
 
 
 <!-- MANUAL ADDITIONS START -->

@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { UserNav } from "@/components/dashboard/user-nav";
 import { GuestNav } from "@/components/dashboard/guest-nav";
 import { Button } from "@/components/ui/button";
-import { Menu, Home, Library } from "lucide-react";
+import { Menu, Home, Library, ListOrdered } from "lucide-react";
 
 interface FloatingNavProps {
   user?: {
@@ -26,6 +26,7 @@ export function FloatingNav({ user, isAdmin = false }: FloatingNavProps) {
     ? [
         { href: "/dashboard", label: "Dashboard", icon: Home },
         { href: "/library", label: "Library", icon: Library },
+        { href: "/lists", label: "Lists", icon: ListOrdered },
       ]
     : [];
 

@@ -13,7 +13,7 @@ export async function GET() {
     const userId = session.user.id;
 
     // Get aggregate stats
-    const [totalCount, libraryCount, wishlistCount, lastSync, durationSum] = await Promise.all([
+    const [totalCount, libraryCount, wishlistCount, lastSync] = await Promise.all([
       prisma.libraryEntry.count({
         where: { userId },
       }),
@@ -28,20 +28,13 @@ export async function GET() {
         orderBy: { syncedAt: "desc" },
         select: { syncedAt: true },
       }),
-      prisma.libraryEntry.findMany({
-        where: { userId },
-        include: { title: { select: { runtimeLengthMin: true } } },
-      }),
     ]);
-
-    // Calculate total duration in minutes
-    const totalDuration = durationSum.reduce((sum, item) => sum + (item.title.runtimeLengthMin || 0), 0);
 
     return NextResponse.json({
       total: totalCount,
       library: libraryCount,
       wishlist: wishlistCount,
-      totalDuration,
+      totalDuration: 0, // Duration requires Audnexus metadata fetch — omitted for performance
       lastSync: lastSync?.syncedAt?.toISOString() || null,
     });
   } catch (error) {

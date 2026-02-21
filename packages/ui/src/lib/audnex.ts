@@ -8,6 +8,14 @@
 
 const AUDNEXUS_BASE_URL = process.env.AUDNEXUS_URL || 'http://localhost:3001'
 
+/**
+ * In-memory metadata cache to avoid re-fetching the same ASIN repeatedly.
+ * Cache entries expire after 10 minutes. Shared across requests in the same
+ * server process, which is fine for a single-user / dev scenario.
+ */
+const CACHE_TTL_MS = 10 * 60 * 1000 // 10 minutes
+const metadataCache = new Map<string, { data: AudnexTitle; expiresAt: number }>()
+
 export interface AudnexTitle {
   asin: string
   title: string
@@ -58,6 +66,14 @@ export async function fetchTitleMetadata(
 ): Promise<AudnexTitle | null> {
   const { retries = 3, retryDelay = 1000 } = options
 
+  // Check cache first
+  const cached = metadataCache.get(asin)
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.data
+  }
+  // Remove expired entry
+  if (cached) metadataCache.delete(asin)
+
   try {
     const response = await fetch(`${AUDNEXUS_BASE_URL}/books/${asin}`)
 
@@ -82,8 +98,12 @@ export async function fetchTitleMetadata(
       return null
     }
 
-    const data = await response.json()
-    return data as AudnexTitle
+    const data = await response.json() as AudnexTitle
+
+    // Cache the result
+    metadataCache.set(asin, { data, expiresAt: Date.now() + CACHE_TTL_MS })
+
+    return data
   } catch (error) {
     console.error(`Audnex API network error for ${asin}:`, error)
 
@@ -102,29 +122,39 @@ export async function fetchTitleMetadata(
 /**
  * Batch fetch multiple titles with concurrency limit
  *
+ * TODO: Audnexus only supports single-ASIN fetches (GET /books/:asin).
+ * Consider adding a POST /books/batch endpoint to the Audnexus fork, or
+ * contributing one upstream (https://github.com/laxamentumtech/audnexus),
+ * to eliminate the N+1 request pattern here.
+ *
  * @param asins - Array of ASINs to fetch
- * @param concurrency - Max concurrent requests (default: 10)
+ * @param concurrency - Max concurrent requests (default: 25, safe for local Audnexus)
  * @returns Promise with array of results (nulls for failures)
  */
 export async function fetchTitleMetadataBatch(
   asins: string[],
-  concurrency: number = 10
+  concurrency: number = 25
 ): Promise<Array<AudnexTitle | null>> {
-  const results: Array<AudnexTitle | null> = []
+  // Deduplicate ASINs and fetch unique ones only
+  const uniqueAsins = [...new Set(asins)]
+  const uniqueResults = new Map<string, AudnexTitle | null>()
 
-  // Process in batches
-  for (let i = 0; i < asins.length; i += concurrency) {
-    const batch = asins.slice(i, i + concurrency)
+  // Process unique ASINs in batches
+  for (let i = 0; i < uniqueAsins.length; i += concurrency) {
+    const batch = uniqueAsins.slice(i, i + concurrency)
     const batchResults = await Promise.allSettled(
       batch.map(asin => fetchTitleMetadata(asin))
     )
 
-    results.push(
-      ...batchResults.map(result =>
+    batch.forEach((asin, index) => {
+      const result = batchResults[index]
+      uniqueResults.set(
+        asin,
         result.status === 'fulfilled' ? result.value : null
       )
-    )
+    })
   }
 
-  return results
+  // Map back to original order (including duplicates)
+  return asins.map(asin => uniqueResults.get(asin) ?? null)
 }

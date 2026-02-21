@@ -1,6 +1,8 @@
 import { Metadata } from "next";
 import { auth } from "@/lib/auth";
+import prisma from "@/lib/prisma";
 import { Card } from "@/components/ui/card";
+import { UsernameForm } from "./username-form";
 
 export const metadata: Metadata = {
   title: "Settings",
@@ -13,6 +15,11 @@ export default async function SettingsPage() {
   if (!session?.user) {
     return null; // Middleware will redirect
   }
+
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { username: true },
+  });
 
   return (
     <div className="container max-w-4xl py-8 md:py-12">
@@ -41,10 +48,14 @@ export default async function SettingsPage() {
         </Card>
 
         <Card className="p-6">
+          <UsernameForm currentUsername={user?.username || null} />
+        </Card>
+
+        <Card className="p-6">
           <div className="space-y-4">
             <h2 className="text-xl font-semibold">Preferences</h2>
             <p className="text-sm text-muted-foreground">
-              Settings and preferences will be available here in a future update.
+              Additional settings and preferences will be available here in a future update.
             </p>
           </div>
         </Card>

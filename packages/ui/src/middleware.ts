@@ -25,7 +25,7 @@ export default auth((req) => {
   }
 
   // Protected routes that require authentication
-  const protectedRoutes = ["/dashboard", "/library"];
+  const protectedRoutes = ["/dashboard", "/library", "/lists", "/settings"];
   const isProtectedRoute = protectedRoutes.some((route) => pathname.startsWith(route));
 
   // Redirect unauthenticated users to signin

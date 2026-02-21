@@ -21,6 +21,7 @@ model User {
   emailVerified DateTime?
   name          String?
   image         String?
+  username      String?   @unique
   isAdmin       Boolean   @default(false)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -31,8 +32,10 @@ model User {
   syncHistory      SyncHistory[]
   sessions         Session[]
   accounts         Account[]
+  lists            List[]
 
   @@index([email])
+  @@index([username])
 }
 
 model LibraryEntry {
@@ -61,6 +64,48 @@ enum LibrarySource {
   LIBRARY
   WISHLIST
   OTHER
+}
+
+// ============================================================================
+// User Lists (Recommendations + Tier Lists)
+// ============================================================================
+
+model List {
+  id          String    @id @default(cuid())
+  userId      String
+  name        String
+  description String?   @db.Text
+  type        ListType
+  tiers       Json?     // ["S", "A", "B", "C", "D"] for tier lists
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items ListItem[]
+
+  @@index([userId])
+}
+
+model ListItem {
+  id         String   @id @default(cuid())
+  listId     String
+  titleAsin  String
+  position   Int
+  tier       String?  // "S", "A", "B", etc. — only for tier lists
+  createdAt  DateTime @default(now())
+
+  // Relations
+  list List @relation(fields: [listId], references: [id], onDelete: Cascade)
+
+  @@unique([listId, titleAsin])  // No duplicate titles in a list
+  @@index([listId])
+  @@index([listId, tier])        // Efficient tier queries
+}
+
+enum ListType {
+  RECOMMENDATION
+  TIER
 }
 
 model SyncToken {

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import prisma from "@/lib/prisma";
-import { fetchTitleMetadataBatch, AudnexTitle } from "@/lib/audnex";
+import { fetchTitleMetadata, fetchTitleMetadataBatch, AudnexTitle } from "@/lib/audnex";
 
 export async function GET(request: NextRequest) {
   try {
@@ -95,6 +95,75 @@ export async function GET(request: NextRequest) {
   } catch (error) {
     console.error("Error fetching library:", error);
     return NextResponse.json({ error: "Failed to fetch library" }, { status: 500 });
+  }
+}
+
+/**
+ * POST /api/library — Manually add a title to the user's library
+ *
+ * Body: { asin: string }
+ * Creates a LibraryEntry with source=OTHER
+ */
+export async function POST(request: NextRequest) {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const userId = session.user.id;
+    const body = await request.json();
+    const { asin } = body;
+
+    if (!asin || typeof asin !== "string") {
+      return NextResponse.json({ error: "ASIN is required" }, { status: 400 });
+    }
+
+    const trimmedAsin = asin.trim();
+
+    // Check if already in library
+    const existing = await prisma.libraryEntry.findUnique({
+      where: { userId_titleAsin: { userId, titleAsin: trimmedAsin } },
+    });
+
+    if (existing) {
+      return NextResponse.json(
+        { error: "This title is already in your library" },
+        { status: 409 }
+      );
+    }
+
+    // Verify the ASIN exists in Audnexus
+    const metadata = await fetchTitleMetadata(trimmedAsin);
+    if (!metadata) {
+      return NextResponse.json(
+        { error: "Could not find this title. Please check the ASIN and try again." },
+        { status: 404 }
+      );
+    }
+
+    // Create library entry with source OTHER
+    const entry = await prisma.libraryEntry.create({
+      data: {
+        userId,
+        titleAsin: trimmedAsin,
+        source: "OTHER",
+        status: "Not Started",
+        progress: 0,
+        userRating: 0,
+      },
+    });
+
+    return NextResponse.json({
+      id: entry.id,
+      asin: entry.titleAsin,
+      title: metadata.title,
+      authors: metadata.authors?.map((a) => a.name) || [],
+      image: metadata.image || null,
+    });
+  } catch (error) {
+    console.error("Error adding title:", error);
+    return NextResponse.json({ error: "Failed to add title" }, { status: 500 });
   }
 }
 

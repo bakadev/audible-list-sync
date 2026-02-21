@@ -1,6 +1,19 @@
+'use client'
+
+import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { X } from "lucide-react";
 
 interface TitlePosterCardProps {
   asin: string;
@@ -11,6 +24,7 @@ interface TitlePosterCardProps {
   duration?: number | null;
   source: "LIBRARY" | "WISHLIST" | "OTHER";
   listeningProgress?: number;
+  onRemove?: () => void;
 }
 
 export function TitlePosterCard({
@@ -22,7 +36,11 @@ export function TitlePosterCard({
   duration,
   source,
   listeningProgress = 0,
+  onRemove,
 }: TitlePosterCardProps) {
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [removing, setRemoving] = useState(false);
+
   const formatDuration = (minutes: number | null | undefined) => {
     if (!minutes) return null;
     const hours = Math.floor(minutes / 60);
@@ -33,84 +51,139 @@ export function TitlePosterCard({
     return `${mins}m`;
   };
 
+  const handleRemove = async () => {
+    if (!onRemove) return;
+    setRemoving(true);
+    try {
+      onRemove();
+    } finally {
+      setRemoving(false);
+      setConfirmOpen(false);
+    }
+  };
+
   return (
-    <Link href={`/library/${asin}`}>
-      <div className="group space-y-3">
-        {/* Poster Image */}
-        <div className="relative aspect-[2/3] overflow-hidden rounded-lg border bg-muted shadow-md transition-all hover:shadow-xl hover:scale-[1.02]">
-          {coverImageUrl ? (
-            <Image
-              src={coverImageUrl}
-              alt={title}
-              fill
-              className="object-cover transition-transform group-hover:scale-105"
-              sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 20vw"
-              loading="lazy"
-              quality={75}
-            />
-          ) : (
-            <div className="flex h-full items-center justify-center">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={1.5}
-                stroke="currentColor"
-                className="h-12 w-12 text-muted-foreground"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"
-                />
-              </svg>
-            </div>
-          )}
+    <>
+      <div className="group relative space-y-3">
+        {/* Remove Button — visible on hover */}
+        {onRemove && (
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setConfirmOpen(true);
+            }}
+            className="absolute -right-1.5 -top-1.5 z-20 flex h-6 w-6 cursor-pointer items-center justify-center rounded-full bg-destructive text-destructive-foreground opacity-0 shadow-md transition-opacity hover:bg-destructive/90 group-hover:opacity-100"
+            aria-label={`Remove ${title}`}
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        )}
 
-          {/* Progress Bar Overlay */}
-          {listeningProgress > 0 && (
-            <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/20">
-              <div
-                className="h-full bg-primary transition-all"
-                style={{ width: `${listeningProgress}%` }}
+        <Link href={`/library/${asin}`}>
+          {/* Poster Image */}
+          <div className="relative aspect-[2/3] overflow-hidden rounded-lg border bg-muted shadow-md transition-all hover:shadow-xl hover:scale-[1.02]">
+            {coverImageUrl ? (
+              <Image
+                src={coverImageUrl}
+                alt={title}
+                fill
+                className="object-cover transition-transform group-hover:scale-105"
+                sizes="(max-width: 768px) 50vw, (max-width: 1200px) 33vw, 20vw"
+                loading="lazy"
+                quality={75}
               />
-            </div>
-          )}
+            ) : (
+              <div className="flex h-full items-center justify-center">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={1.5}
+                  stroke="currentColor"
+                  className="h-12 w-12 text-muted-foreground"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"
+                  />
+                </svg>
+              </div>
+            )}
 
-          {/* Source Badge */}
-          <div className="absolute right-2 top-2">
-            <Badge
-              variant={source === "LIBRARY" ? "default" : source === "WISHLIST" ? "outline" : "secondary"}
-              className="text-xs shadow-sm"
-            >
-              {source}
-            </Badge>
+            {/* Progress Bar Overlay */}
+            {listeningProgress > 0 && (
+              <div className="absolute bottom-0 left-0 right-0 h-1 bg-black/20">
+                <div
+                  className="h-full bg-primary transition-all"
+                  style={{ width: `${listeningProgress}%` }}
+                />
+              </div>
+            )}
+
+            {/* Source Badge */}
+            <div className="absolute right-2 top-2">
+              <Badge
+                variant={source === "LIBRARY" ? "default" : source === "WISHLIST" ? "outline" : "secondary"}
+                className="text-xs shadow-sm"
+              >
+                {source === "OTHER" ? "MANUAL" : source}
+              </Badge>
+            </div>
+
+            {/* Rating */}
+            {rating && (
+              <div className="absolute left-2 top-2 flex items-center gap-1 rounded-md bg-black/70 px-2 py-1 text-xs font-semibold text-white backdrop-blur-sm">
+                <svg
+                  className="h-3 w-3 fill-yellow-400"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 20 20"
+                >
+                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                </svg>
+                {rating.toFixed(1)}
+              </div>
+            )}
           </div>
 
-          {/* Rating */}
-          {rating && (
-            <div className="absolute left-2 top-2 flex items-center gap-1 rounded-md bg-black/70 px-2 py-1 text-xs font-semibold text-white backdrop-blur-sm">
-              <svg
-                className="h-3 w-3 fill-yellow-400"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-              >
-                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-              </svg>
-              {rating.toFixed(1)}
-            </div>
-          )}
-        </div>
-
-        {/* Title and Metadata */}
-        <div className="space-y-1">
-          <h3 className="line-clamp-2 text-sm font-medium leading-tight transition-colors group-hover:text-primary">
-            {title}
-          </h3>
-          <p className="line-clamp-1 text-xs text-muted-foreground">{authors.join(", ")}</p>
-          {duration && <p className="text-xs text-muted-foreground">{formatDuration(duration)}</p>}
-        </div>
+          {/* Title and Metadata */}
+          <div className="space-y-1">
+            <h3 className="line-clamp-2 text-sm font-medium leading-tight transition-colors group-hover:text-primary">
+              {title}
+            </h3>
+            <p className="line-clamp-1 text-xs text-muted-foreground">{authors.join(", ")}</p>
+            {duration && <p className="text-xs text-muted-foreground">{formatDuration(duration)}</p>}
+          </div>
+        </Link>
       </div>
-    </Link>
+
+      {/* Remove Confirmation Dialog */}
+      {onRemove && (
+        <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Remove from library</DialogTitle>
+              <DialogDescription>
+                Are you sure you want to remove &ldquo;{title}&rdquo; from your
+                library? This action cannot be undone.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setConfirmOpen(false)}>
+                Cancel
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleRemove}
+                disabled={removing}
+              >
+                {removing ? "Removing..." : "Remove"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+    </>
   );
 }
