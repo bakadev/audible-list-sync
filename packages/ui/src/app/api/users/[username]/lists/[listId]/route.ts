@@ -42,6 +42,9 @@ export async function GET(
         type: true,
         tiers: true,
         userId: true,
+        imageStatus: true,
+        imageOgKey: true,
+        imageSquareKey: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -105,6 +108,16 @@ export async function GET(
       };
     });
 
+    // Public responses use proxy route URLs (not presigned URLs) so they stay stable
+    const imageOgUrl =
+      list.imageStatus === 'READY' && list.imageOgKey
+        ? `/api/lists/${list.id}/og-image`
+        : null
+    const imageSquareUrl =
+      list.imageStatus === 'READY' && list.imageSquareKey
+        ? `/api/lists/${list.id}/square-image`
+        : null
+
     return NextResponse.json({
       user: {
         username: user.username,
@@ -116,6 +129,9 @@ export async function GET(
       description: list.description,
       type: list.type,
       tiers: list.tiers,
+      imageStatus: list.imageStatus,
+      imageOgUrl,
+      imageSquareUrl,
       items: itemsWithMetadata,
       createdAt: list.createdAt,
       updatedAt: list.updatedAt,

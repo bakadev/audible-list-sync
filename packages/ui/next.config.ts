@@ -4,6 +4,9 @@ const nextConfig: NextConfig = {
   // Enable standalone output for Docker deployment
   output: "standalone",
 
+  // @resvg/resvg-js is a native Node module that must not be bundled by webpack
+  serverExternalPackages: ['@resvg/resvg-js'],
+
   // Configure image domains for Audible cover art
   images: {
     remotePatterns: [

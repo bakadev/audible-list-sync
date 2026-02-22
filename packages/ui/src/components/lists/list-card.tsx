@@ -14,7 +14,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import { Pencil, Trash2, ListOrdered, Layers, ExternalLink } from 'lucide-react'
+import { Pencil, Trash2, ListOrdered, Layers, ExternalLink, Share2 } from 'lucide-react'
+import { ShareModal } from './share-modal'
 
 interface ListCardProps {
   list: {
@@ -23,6 +24,7 @@ interface ListCardProps {
     description: string | null
     type: 'RECOMMENDATION' | 'TIER'
     itemCount: number
+    imageStatus?: string
     updatedAt: string
   }
   username: string | null
@@ -32,6 +34,7 @@ interface ListCardProps {
 export function ListCard({ list, username, onDelete }: ListCardProps) {
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [shareOpen, setShareOpen] = useState(false)
 
   const handleDelete = async () => {
     setDeleting(true)
@@ -90,11 +93,21 @@ export function ListCard({ list, username, onDelete }: ListCardProps) {
         </Link>
 
         {username && (
-          <Link href={`/${username}/lists/${list.id}`} target="_blank">
-            <Button variant="outline" size="sm" className="gap-1.5">
-              <ExternalLink className="h-3.5 w-3.5" />
+          <>
+            <Link href={`/${username}/lists/${list.id}`} target="_blank">
+              <Button variant="outline" size="sm" className="gap-1.5">
+                <ExternalLink className="h-3.5 w-3.5" />
+              </Button>
+            </Link>
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5"
+              onClick={() => setShareOpen(true)}
+            >
+              <Share2 className="h-3.5 w-3.5" />
             </Button>
-          </Link>
+          </>
         )}
 
         <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
@@ -126,6 +139,17 @@ export function ListCard({ list, username, onDelete }: ListCardProps) {
           </DialogContent>
         </Dialog>
       </div>
+
+      {username && (
+        <ShareModal
+          open={shareOpen}
+          onOpenChange={setShareOpen}
+          listName={list.name}
+          shareUrl={`/${username}/lists/${list.id}`}
+          listId={list.id}
+          imageStatus={list.imageStatus || 'NONE'}
+        />
+      )}
     </Card>
   )
 }

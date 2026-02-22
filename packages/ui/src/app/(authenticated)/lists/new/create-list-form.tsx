@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/card'
 import { ListOrdered, Layers } from 'lucide-react'
 import { toast } from 'sonner'
 import { UsernamePrompt } from '@/components/lists/username-prompt'
+import { TemplatePicker } from '@/components/lists/template-picker'
 
 interface CreateListFormProps {
   hasUsername: boolean
@@ -18,6 +19,7 @@ export function CreateListForm({ hasUsername }: CreateListFormProps) {
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [type, setType] = useState<'RECOMMENDATION' | 'TIER'>('RECOMMENDATION')
+  const [imageTemplateId, setImageTemplateId] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [showUsernamePrompt, setShowUsernamePrompt] = useState(false)
@@ -61,6 +63,7 @@ export function CreateListForm({ hasUsername }: CreateListFormProps) {
           name: name.trim(),
           description: description.trim() || null,
           type,
+          imageTemplateId,
         }),
       })
 
@@ -156,6 +159,18 @@ export function CreateListForm({ hasUsername }: CreateListFormProps) {
               </div>
             </Card>
           </div>
+        </div>
+
+        {/* Image Template Selection */}
+        <div className="space-y-3">
+          <label className="text-sm font-medium">Share Image Template</label>
+          <p className="text-xs text-muted-foreground">
+            Choose a layout for the image generated when you share your list. You can change this later.
+          </p>
+          <TemplatePicker
+            selectedTemplateId={imageTemplateId}
+            onSelect={setImageTemplateId}
+          />
         </div>
 
         <Button type="submit" disabled={submitting} className="w-full">

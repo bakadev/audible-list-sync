@@ -13,7 +13,7 @@ import { isAdmin } from '@/lib/admin-auth'
 import Link from 'next/link'
 import prisma from '@/lib/prisma'
 import { Button } from '@/components/ui/button'
-import { LayoutDashboard, Users } from 'lucide-react'
+import { LayoutDashboard, Users, Palette } from 'lucide-react'
 
 export default async function AdminLayout({
   children,
@@ -64,6 +64,12 @@ export default async function AdminLayout({
             <Button variant="ghost" size="sm">
               <Users className="h-4 w-4 mr-2" />
               Users
+            </Button>
+          </Link>
+          <Link href="/admin/templates">
+            <Button variant="ghost" size="sm">
+              <Palette className="h-4 w-4 mr-2" />
+              Templates
             </Button>
           </Link>
         </nav>

@@ -7,6 +7,14 @@ import {
   validateListDescription,
   validateTiers,
 } from '@/lib/list-validation';
+import { getSignedImageUrl } from '@/lib/s3';
+import { getTemplate } from '@/lib/image-generator/templates/registry';
+
+// Ensure templates are registered
+import '@/lib/image-generator/templates/grid-3x3';
+import '@/lib/image-generator/templates/hero';
+import '@/lib/image-generator/templates/minimal-banner';
+import '@/lib/image-generator/templates/hero-plus';
 
 function enrichItemsWithMetadata(
   items: any[],
@@ -76,12 +84,41 @@ export async function GET(
 
   const enrichedItems = enrichItemsWithMetadata(list.items, metadataMap);
 
+  // Generate presigned URLs for image keys if images are ready
+  let imageOgUrl: string | null = null;
+  let imageSquareUrl: string | null = null;
+
+  if (list.imageStatus === 'READY') {
+    if (list.imageOgKey) {
+      try {
+        imageOgUrl = await getSignedImageUrl(list.imageOgKey);
+      } catch (e) {
+        console.error('Failed to generate presigned URL for OG image:', e);
+      }
+    }
+    if (list.imageSquareKey) {
+      try {
+        imageSquareUrl = await getSignedImageUrl(list.imageSquareKey);
+      } catch (e) {
+        console.error('Failed to generate presigned URL for square image:', e);
+      }
+    }
+  }
+
   return NextResponse.json({
     id: list.id,
     name: list.name,
     description: list.description,
     type: list.type,
     tiers: list.tiers,
+    imageTemplateId: list.imageTemplateId,
+    imageVersion: list.imageVersion,
+    imageStatus: list.imageStatus,
+    imageOgKey: list.imageOgKey,
+    imageSquareKey: list.imageSquareKey,
+    imageGeneratedAt: list.imageGeneratedAt,
+    imageOgUrl,
+    imageSquareUrl,
     createdAt: list.createdAt,
     updatedAt: list.updatedAt,
     items: enrichedItems,
@@ -118,11 +155,13 @@ export async function PUT(
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  const { name, description, type, tiers } = body as {
+  const { name, description, type, tiers, imageTemplateId, regenerateImage } = body as {
     name?: string;
     description?: string;
     type?: string;
     tiers?: string[];
+    imageTemplateId?: string;
+    regenerateImage?: boolean;
   };
 
   if (type !== undefined) {
@@ -130,6 +169,17 @@ export async function PUT(
       { error: 'List type is immutable and cannot be changed' },
       { status: 400 }
     );
+  }
+
+  // Validate template ID if provided
+  if (imageTemplateId !== undefined && imageTemplateId !== null) {
+    const template = getTemplate(imageTemplateId);
+    if (!template) {
+      return NextResponse.json(
+        { error: `Invalid template: ${imageTemplateId}` },
+        { status: 400 }
+      );
+    }
   }
 
   const updateData: Record<string, unknown> = {};
@@ -162,6 +212,27 @@ export async function PUT(
     updateData.tiers = tiers;
   }
 
+  // Handle template changes
+  if (imageTemplateId !== undefined) {
+    updateData.imageTemplateId = imageTemplateId;
+  }
+
+  // Determine if regeneration is needed
+  // If regenerateImage is explicitly false, skip auto-detection (caller will handle it)
+  const shouldRegenerate =
+    regenerateImage === false
+      ? false
+      : regenerateImage === true ||
+        (imageTemplateId !== undefined && imageTemplateId !== list.imageTemplateId) ||
+        (name !== undefined && name !== list.name) ||
+        (description !== undefined && description !== list.description);
+
+  if (shouldRegenerate && (imageTemplateId || list.imageTemplateId)) {
+    updateData.imageVersion = list.imageVersion + 1;
+    updateData.imageStatus = 'GENERATING';
+    updateData.imageError = null;
+  }
+
   const updatedList = await prisma.list.update({
     where: { id: listId },
     data: updateData,
@@ -172,7 +243,94 @@ export async function PUT(
     },
   });
 
+  // Trigger async image generation if needed (fire-and-forget)
+  if (shouldRegenerate && updatedList.imageTemplateId) {
+    triggerImageGeneration(updatedList).catch((err) => {
+      console.error('Image generation failed:', err);
+    });
+  }
+
   return NextResponse.json(updatedList);
+}
+
+/**
+ * Fire-and-forget image generation.
+ * Updates the DB with results or failure status.
+ */
+async function triggerImageGeneration(list: {
+  id: string;
+  name: string;
+  description: string | null;
+  imageTemplateId: string | null;
+  imageVersion: number;
+  userId: string;
+}) {
+  try {
+    const { generateListImages } = await import('@/lib/image-generator/generateListImages');
+    const { uploadImage } = await import('@/lib/s3');
+
+    // Fetch items with metadata for cover images
+    const items = await prisma.listItem.findMany({
+      where: { listId: list.id },
+      orderBy: { position: 'asc' },
+    });
+
+    const { fetchTitleMetadataBatch } = await import('@/lib/audnex');
+    const asins = items.map((i) => i.titleAsin);
+    const metadata = asins.length > 0 ? await fetchTitleMetadataBatch(asins) : [];
+
+    const books = items.map((item, idx) => ({
+      asin: item.titleAsin,
+      coverImageUrl: metadata[idx]?.image || null,
+      title: metadata[idx]?.title || item.titleAsin,
+    }));
+
+    // Fetch user for username
+    const user = await prisma.user.findUnique({
+      where: { id: list.userId },
+      select: { username: true, name: true },
+    });
+
+    const images = await generateListImages({
+      listId: list.id,
+      title: list.name,
+      description: list.description || undefined,
+      username: user?.username || user?.name || 'Unknown',
+      books,
+      templateId: list.imageTemplateId!,
+    });
+
+    // Upload to S3
+    const version = list.imageVersion;
+    const ogKey = `lists/${list.id}/v${version}/og.png`;
+    const squareKey = `lists/${list.id}/v${version}/square.png`;
+
+    await Promise.all([
+      images.og ? uploadImage(ogKey, images.og.buffer) : Promise.resolve(),
+      images.square ? uploadImage(squareKey, images.square.buffer) : Promise.resolve(),
+    ]);
+
+    // Update DB with success
+    await prisma.list.update({
+      where: { id: list.id },
+      data: {
+        imageOgKey: images.og ? ogKey : null,
+        imageSquareKey: images.square ? squareKey : null,
+        imageStatus: 'READY',
+        imageGeneratedAt: new Date(),
+        imageError: null,
+      },
+    });
+  } catch (error) {
+    console.error(`Image generation failed for list ${list.id}:`, error);
+    await prisma.list.update({
+      where: { id: list.id },
+      data: {
+        imageStatus: 'FAILED',
+        imageError: error instanceof Error ? error.message : 'Unknown error',
+      },
+    });
+  }
 }
 
 export async function DELETE(

@@ -7,6 +7,13 @@ import {
   validateListType,
   validateTiers,
 } from '@/lib/list-validation';
+import { getTemplate } from '@/lib/image-generator/templates/registry';
+
+// Ensure templates are registered
+import '@/lib/image-generator/templates/grid-3x3';
+import '@/lib/image-generator/templates/hero';
+import '@/lib/image-generator/templates/minimal-banner';
+import '@/lib/image-generator/templates/hero-plus';
 
 export async function GET() {
   const session = await auth();
@@ -31,6 +38,8 @@ export async function GET() {
     type: list.type,
     tiers: list.tiers,
     itemCount: list._count.items,
+    imageTemplateId: list.imageTemplateId,
+    imageStatus: list.imageStatus,
     createdAt: list.createdAt,
     updatedAt: list.updatedAt,
   }));
@@ -51,11 +60,12 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
 
-  const { name, description, type, tiers } = body as {
+  const { name, description, type, tiers, imageTemplateId } = body as {
     name?: string;
     description?: string;
     type?: string;
     tiers?: string[];
+    imageTemplateId?: string;
   };
 
   const nameValidation = validateListName(name);
@@ -75,6 +85,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: typeValidation.error }, { status: 400 });
   }
 
+  // Validate template ID if provided
+  if (imageTemplateId) {
+    const template = getTemplate(imageTemplateId);
+    if (!template) {
+      return NextResponse.json(
+        { error: `Invalid template: ${imageTemplateId}` },
+        { status: 400 }
+      );
+    }
+  }
+
   const resolvedTiers =
     type === 'TIER' ? (tiers ?? ['S', 'A', 'B', 'C', 'D']) : null;
 
@@ -92,11 +113,16 @@ export async function POST(request: NextRequest) {
       description: description || null,
       type: type as 'RECOMMENDATION' | 'TIER',
       tiers: resolvedTiers,
+      imageTemplateId: imageTemplateId || null,
     },
     include: {
       items: true,
     },
   });
 
-  return NextResponse.json(list, { status: 201 });
+  return NextResponse.json({
+    ...list,
+    imageOgUrl: null,
+    imageSquareUrl: null,
+  }, { status: 201 });
 }

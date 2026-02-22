@@ -80,6 +80,15 @@ model List {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
+  // Image generation fields
+  imageTemplateId  String?                          // Selected template ID (e.g., "grid-3x3", "hero", "minimal-banner")
+  imageVersion     Int          @default(0)         // Incremented on each generation for cache busting
+  imageOgKey       String?                          // S3 object key for OG image (1200x630)
+  imageSquareKey   String?                          // S3 object key for square image (1080x1080)
+  imageGeneratedAt DateTime?                        // Timestamp of last successful generation
+  imageStatus      ImageStatus  @default(NONE)      // Current generation status
+  imageError       String?      @db.Text            // Error message if generation failed
+
   // Relations
   user  User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   items ListItem[]
@@ -106,6 +115,13 @@ model ListItem {
 enum ListType {
   RECOMMENDATION
   TIER
+}
+
+enum ImageStatus {
+  NONE        // No image has been generated
+  GENERATING  // Generation in progress
+  READY       // Image generated and uploaded successfully
+  FAILED      // Generation failed (check imageError)
 }
 
 model SyncToken {

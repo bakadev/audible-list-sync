@@ -4,6 +4,8 @@ import prisma from '@/lib/prisma'
 import { fetchTitleMetadataBatch } from '@/lib/audnex'
 import { PublicListView } from '@/components/lists/public-list-view'
 import { PublicTierView } from '@/components/lists/public-tier-view'
+import { ListImageHeader } from '@/components/lists/list-image-header'
+import { ShareButton } from '@/components/lists/share-button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { ListOrdered, Layers } from 'lucide-react'
@@ -27,16 +29,42 @@ export async function generateMetadata({ params }: PublicListPageProps): Promise
 
   const list = await prisma.list.findUnique({
     where: { id: listId },
-    select: { name: true, description: true, userId: true },
+    select: {
+      name: true,
+      description: true,
+      userId: true,
+      imageStatus: true,
+      imageOgKey: true,
+    },
   })
 
   if (!list || list.userId !== user.id) {
     return { title: 'Not Found' }
   }
 
+  // OG image URL — use proxy route (not presigned URL) so it stays stable
+  const ogImageUrl =
+    list.imageStatus === 'READY' && list.imageOgKey
+      ? `${process.env.NEXTAUTH_URL}/api/lists/${listId}/og-image`
+      : undefined
+
   return {
     title: `${list.name} by ${user.name || user.username} - audioshlf`,
     description: list.description || `A list by ${user.name || user.username}`,
+    openGraph: {
+      title: list.name,
+      description: list.description || `A list by ${user.name || user.username}`,
+      type: 'article',
+      images: ogImageUrl
+        ? [{ url: ogImageUrl, width: 1200, height: 630 }]
+        : undefined,
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: list.name,
+      description: list.description || `A list by ${user.name || user.username}`,
+      images: ogImageUrl ? [ogImageUrl] : undefined,
+    },
   }
 }
 
@@ -118,9 +146,22 @@ export default async function PublicListPage({ params }: PublicListPageProps) {
     year: 'numeric',
   })
 
+  // Image URL for the header — use proxy route URL
+  const imageUrl =
+    list.imageStatus === 'READY' && list.imageOgKey
+      ? `/api/lists/${list.id}/og-image`
+      : null
+
   return (
     <div className="container mx-auto max-w-4xl px-4 py-8 md:py-12">
       <div className="space-y-6">
+        {/* Generated Header Image */}
+        <ListImageHeader
+          imageUrl={imageUrl}
+          imageStatus={list.imageStatus}
+          listName={list.name}
+        />
+
         {/* Author */}
         <Link href={`/${username}`} className="inline-flex items-center gap-2 hover:opacity-80">
           <Avatar className="h-8 w-8">
@@ -134,15 +175,23 @@ export default async function PublicListPage({ params }: PublicListPageProps) {
 
         {/* List Header */}
         <div className="space-y-2">
-          <div className="flex items-start gap-3">
-            <h1 className="text-3xl font-bold leading-tight">{list.name}</h1>
-            <Badge variant="secondary" className="mt-1 shrink-0 text-xs">
-              {list.type === 'RECOMMENDATION' ? (
-                <><ListOrdered className="mr-1 h-3 w-3" />List</>
-              ) : (
-                <><Layers className="mr-1 h-3 w-3" />Tiers</>
-              )}
-            </Badge>
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start gap-3">
+              <h1 className="text-3xl font-bold leading-tight">{list.name}</h1>
+              <Badge variant="secondary" className="mt-1 shrink-0 text-xs">
+                {list.type === 'RECOMMENDATION' ? (
+                  <><ListOrdered className="mr-1 h-3 w-3" />List</>
+                ) : (
+                  <><Layers className="mr-1 h-3 w-3" />Tiers</>
+                )}
+              </Badge>
+            </div>
+            <ShareButton
+              listName={list.name}
+              shareUrl={`/${username}/lists/${list.id}`}
+              listId={list.id}
+              imageStatus={list.imageStatus}
+            />
           </div>
           {list.description && (
             <p className="text-muted-foreground">{list.description}</p>

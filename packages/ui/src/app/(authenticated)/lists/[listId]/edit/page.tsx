@@ -88,6 +88,12 @@ export default async function EditListPage({
           type: list.type,
           tiers: (list.tiers as string[]) || ['S', 'A', 'B', 'C', 'D'],
           items: enrichedItems,
+          imageTemplateId: list.imageTemplateId,
+          imageStatus: list.imageStatus,
+          imageOgUrl: list.imageStatus === 'READY' && list.imageOgKey
+            ? `/api/lists/${list.id}/og-image`
+            : null,
+          imageError: list.imageError,
         }}
         username={user?.username || null}
       />
