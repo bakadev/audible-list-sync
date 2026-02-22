@@ -22,6 +22,7 @@ import '@/lib/image-generator/templates/grid-3x3'
 import '@/lib/image-generator/templates/hero'
 import '@/lib/image-generator/templates/minimal-banner'
 import '@/lib/image-generator/templates/hero-plus'
+import '@/lib/image-generator/templates/tier-list'
 
 /**
  * Browser-safe placeholder cover generator.
@@ -85,6 +86,19 @@ export default function TemplatePreviewPage() {
     return makePlaceholderCovers(slotSpecs)
   }, [selectedTemplate, size])
 
+  // Build sample tier data for tier-list template
+  const isTierTemplate = selectedId === 'tier-list'
+  const coversPerRow = size === 'og' ? 4 : 3
+  const sampleTiers = useMemo(() => {
+    if (!isTierTemplate) return undefined
+    return [
+      { label: 'S', coverCount: coversPerRow },
+      { label: 'A', coverCount: coversPerRow },
+      { label: 'B', coverCount: coversPerRow },
+      { label: 'C', coverCount: coversPerRow },
+    ]
+  }, [isTierTemplate, coversPerRow])
+
   const templateProps = {
     width: preset.width,
     height: preset.height,
@@ -92,6 +106,7 @@ export default function TemplatePreviewPage() {
     description,
     username,
     covers,
+    tiers: sampleTiers,
   }
 
   return (

@@ -23,7 +23,7 @@ export async function POST(
     where: { id: listId },
     include: {
       items: {
-        orderBy: { position: 'asc' },
+        orderBy: [{ tier: 'asc' }, { position: 'asc' }],
       },
       user: {
         select: { username: true, name: true },
@@ -79,7 +79,13 @@ export async function POST(
       asin: item.titleAsin,
       coverImageUrl: metadata[idx]?.image || null,
       title: metadata[idx]?.title || item.titleAsin,
+      tier: item.tier,
     }))
+
+    // Build tier labels for tier lists
+    const tierLabels = list.type === 'TIER' && Array.isArray(list.tiers) && list.tiers.length > 0
+      ? (list.tiers as string[])
+      : undefined
 
     const images = await generateListImages({
       listId: list.id,
@@ -88,6 +94,7 @@ export async function POST(
       username: list.user.username || list.user.name || 'Unknown',
       books,
       templateId: list.imageTemplateId,
+      tierLabels,
     })
 
     const ogKey = `lists/${list.id}/v${newVersion}/og.png`

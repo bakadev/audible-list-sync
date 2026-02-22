@@ -127,7 +127,7 @@ export function CreateListForm({ hasUsername }: CreateListFormProps) {
                   ? 'border-primary bg-primary/5'
                   : 'hover:border-muted-foreground/50'
               }`}
-              onClick={() => setType('RECOMMENDATION')}
+              onClick={() => { setType('RECOMMENDATION'); setImageTemplateId(null) }}
             >
               <div className="flex items-start gap-3">
                 <ListOrdered className="mt-0.5 h-5 w-5 shrink-0" />
@@ -146,7 +146,7 @@ export function CreateListForm({ hasUsername }: CreateListFormProps) {
                   ? 'border-primary bg-primary/5'
                   : 'hover:border-muted-foreground/50'
               }`}
-              onClick={() => setType('TIER')}
+              onClick={() => { setType('TIER'); setImageTemplateId(null) }}
             >
               <div className="flex items-start gap-3">
                 <Layers className="mt-0.5 h-5 w-5 shrink-0" />
@@ -170,6 +170,7 @@ export function CreateListForm({ hasUsername }: CreateListFormProps) {
           <TemplatePicker
             selectedTemplateId={imageTemplateId}
             onSelect={setImageTemplateId}
+            listType={type}
           />
         </div>
 

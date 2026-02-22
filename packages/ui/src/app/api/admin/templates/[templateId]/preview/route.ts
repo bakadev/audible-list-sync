@@ -20,6 +20,7 @@ import '@/lib/image-generator/templates/grid-3x3'
 import '@/lib/image-generator/templates/hero'
 import '@/lib/image-generator/templates/minimal-banner'
 import '@/lib/image-generator/templates/hero-plus'
+import '@/lib/image-generator/templates/tier-list'
 
 export async function GET(
   request: NextRequest,
@@ -51,13 +52,26 @@ export async function GET(
   const slotSpecs = template.getSlotSpecs(size as 'og' | 'square')
   const covers = generatePlaceholderCovers(slotSpecs)
 
+  // Build sample tier data for tier-list template
+  const isTierTemplate = template.id === 'tier-list'
+  const coversPerRow = size === 'og' ? 4 : 3
+  const sampleTiers = isTierTemplate
+    ? [
+        { label: 'S', coverCount: coversPerRow },
+        { label: 'A', coverCount: coversPerRow },
+        { label: 'B', coverCount: coversPerRow },
+        { label: 'C', coverCount: coversPerRow },
+      ]
+    : undefined
+
   const element = React.createElement(template.Component, {
     width: preset.width,
     height: preset.height,
-    title: 'My Favorite Audiobooks',
-    description: 'A curated collection of great listens',
+    title: isTierTemplate ? 'My Tier List' : 'My Favorite Audiobooks',
+    description: isTierTemplate ? undefined : 'A curated collection of great listens',
     username: 'sampleuser',
     covers,
+    tiers: sampleTiers,
   })
 
   const result = await renderToPng(element, preset.width, preset.height)

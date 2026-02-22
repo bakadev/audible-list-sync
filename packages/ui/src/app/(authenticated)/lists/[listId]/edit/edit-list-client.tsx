@@ -354,6 +354,7 @@ export function EditListClient({ list, username }: EditListClientProps) {
           <TemplatePicker
             selectedTemplateId={imageTemplateId}
             onSelect={setImageTemplateId}
+            listType={list.type}
           />
         </div>
       </div>

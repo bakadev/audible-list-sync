@@ -1,90 +1,89 @@
-'use client'
+"use client";
 
-import { useState, useEffect } from 'react'
-import { Card } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { Loader2, Grid3x3, Star, AlignLeft } from 'lucide-react'
+import { useState, useEffect } from "react";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Loader2, Grid3x3, Star, AlignLeft, Layers, Sparkles } from "lucide-react";
 
 interface Template {
-  id: string
-  name: string
-  description?: string
-  slotCount: number
-  supportedSizes: string[]
+  id: string;
+  name: string;
+  description?: string;
+  slotCount: number;
+  supportedSizes: string[];
 }
 
 interface TemplatePickerProps {
-  selectedTemplateId: string | null
-  onSelect: (templateId: string) => void
+  selectedTemplateId: string | null;
+  onSelect: (templateId: string) => void;
+  listType?: "RECOMMENDATION" | "TIER";
 }
 
 const TEMPLATE_ICONS: Record<string, typeof Grid3x3> = {
-  'grid-3x3': Grid3x3,
+  "grid-3x3": Grid3x3,
   hero: Star,
-  'minimal-banner': AlignLeft,
-}
+  "hero-plus": Sparkles,
+  "minimal-banner": AlignLeft,
+  "tier-list": Layers,
+};
 
 const TEMPLATE_PREVIEW_COLORS: Record<string, { bg: string; accent: string }> = {
-  'grid-3x3': { bg: 'bg-slate-900', accent: 'bg-slate-700' },
-  hero: { bg: 'bg-indigo-950', accent: 'bg-indigo-800' },
-  'minimal-banner': { bg: 'bg-stone-50', accent: 'bg-stone-300' },
-}
+  "grid-3x3": { bg: "bg-slate-900", accent: "bg-slate-700" },
+  hero: { bg: "bg-indigo-950", accent: "bg-indigo-800" },
+  "hero-plus": { bg: "bg-indigo-950", accent: "bg-indigo-800" },
+  "minimal-banner": { bg: "bg-stone-50", accent: "bg-stone-300" },
+  "tier-list": { bg: "bg-slate-900", accent: "bg-slate-600" },
+};
 
-export function TemplatePicker({
-  selectedTemplateId,
-  onSelect,
-}: TemplatePickerProps) {
-  const [templates, setTemplates] = useState<Template[]>([])
-  const [loading, setLoading] = useState(true)
+export function TemplatePicker({ selectedTemplateId, onSelect, listType }: TemplatePickerProps) {
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchTemplates() {
       try {
-        const res = await fetch('/api/templates')
+        const params = listType ? `?listType=${listType}` : "";
+        const res = await fetch(`/api/templates${params}`);
         if (res.ok) {
-          const data = await res.json()
-          setTemplates(data.templates)
+          const data = await res.json();
+          setTemplates(data.templates);
         }
       } catch {
-        console.error('Failed to fetch templates')
+        console.error("Failed to fetch templates");
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
     }
-    fetchTemplates()
-  }, [])
+    fetchTemplates();
+  }, [listType]);
 
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
         <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
       </div>
-    )
+    );
   }
 
   if (templates.length === 0) {
-    return (
-      <p className="text-sm text-muted-foreground">No templates available.</p>
-    )
+    return <p className="text-sm text-muted-foreground">No templates available.</p>;
   }
 
   return (
     <div className="grid gap-3 sm:grid-cols-3">
       {templates.map((template) => {
-        const Icon = TEMPLATE_ICONS[template.id] || Grid3x3
+        const Icon = TEMPLATE_ICONS[template.id] || Grid3x3;
         const colors = TEMPLATE_PREVIEW_COLORS[template.id] || {
-          bg: 'bg-slate-900',
-          accent: 'bg-slate-700',
-        }
-        const isSelected = selectedTemplateId === template.id
+          bg: "bg-slate-900",
+          accent: "bg-slate-700",
+        };
+        const isSelected = selectedTemplateId === template.id;
 
         return (
           <Card
             key={template.id}
             className={`cursor-pointer overflow-hidden transition-all ${
-              isSelected
-                ? 'ring-2 ring-primary ring-offset-2'
-                : 'hover:border-muted-foreground/50'
+              isSelected ? "ring-2 ring-primary ring-offset-2" : "hover:border-muted-foreground/50"
             }`}
             onClick={() => onSelect(template.id)}
           >
@@ -106,64 +105,98 @@ export function TemplatePicker({
                 </Badge>
               </div>
               {template.description && (
-                <p className="text-xs text-muted-foreground">
-                  {template.description}
-                </p>
+                <p className="text-xs text-muted-foreground">{template.description}</p>
               )}
             </div>
           </Card>
-        )
+        );
       })}
     </div>
-  )
+  );
 }
 
 /** Simple mini preview that hints at the template layout. */
-function TemplatePreviewMini({
-  templateId,
-  accent,
-}: {
-  templateId: string
-  accent: string
-}) {
-  if (templateId === 'grid-3x3') {
+function TemplatePreviewMini({ templateId, accent }: { templateId: string; accent: string }) {
+  if (templateId === "grid-3x3") {
     return (
       <div className="grid grid-cols-3 gap-1">
         {Array.from({ length: 9 }).map((_, i) => (
-          <div key={i} className={`${accent} h-4 w-6 rounded-sm`} />
+          <div key={i} className={`${accent} h-4 w-6 rounded-xs`} />
         ))}
       </div>
-    )
+    );
   }
 
-  if (templateId === 'hero') {
+  if (templateId === "hero") {
     return (
       <div className="flex gap-1.5">
-        <div className={`${accent} h-12 w-10 rounded-sm`} />
+        <div className={`${accent} h-11 w-10 rounded-xs`} />
         <div className="flex flex-col gap-1">
-          <div className={`${accent} h-3.5 w-7 rounded-sm`} />
-          <div className={`${accent} h-3.5 w-7 rounded-sm`} />
-          <div className={`${accent} h-3.5 w-7 rounded-sm`} />
+          <div className={`${accent} h-3 w-7 rounded-xs`} />
+          <div className={`${accent} h-3 w-7 rounded-xs`} />
+          <div className={`${accent} h-3 w-7 rounded-xs`} />
         </div>
       </div>
-    )
+    );
   }
 
-  if (templateId === 'minimal-banner') {
+  if (templateId === "minimal-banner") {
     return (
       <div className="flex items-center gap-3">
         <div className="flex flex-col gap-1">
-          <div className={`${accent} h-2 w-16 rounded-sm`} />
-          <div className={`${accent} h-1.5 w-12 rounded-sm`} />
+          <div className={`${accent} h-1.5 w-16 rounded-xs`} />
+          <div className={`${accent} h-1.5 w-12 rounded-xs`} />
         </div>
-        <div className="flex gap-1">
-          <div className={`${accent} h-10 w-5 rounded-sm`} />
-          <div className={`${accent} h-10 w-5 rounded-sm`} />
-          <div className={`${accent} h-10 w-5 rounded-sm`} />
+        <div className="flex flex-col gap-1">
+          <div className={`${accent} w-8 h-3 rounded-xs`} />
+          <div className={`${accent} w-8 h-3 rounded-xs`} />
+          <div className={`${accent} w-8 h-3 rounded-xs`} />
         </div>
       </div>
-    )
+    );
   }
 
-  return <div className={`${accent} h-8 w-12 rounded-sm`} />
+  if (templateId === "hero-plus") {
+    return (
+      <div className="flex gap-1.5">
+        <div className={`${accent} h-11 w-10 rounded-xs`} />
+        <div className="flex flex-col gap-1">
+          <div className="flex gap-1">
+            <div className={`${accent} h-3 w-3 rounded-xs`} />
+            <div className={`${accent} h-3 w-3 rounded-xs`} />
+          </div>
+          <div className="flex gap-1">
+            <div className={`${accent} h-3 w-3 rounded-xs`} />
+            <div className={`${accent} h-3 w-3 rounded-xs`} />
+          </div>
+          <div className="flex gap-1">
+            <div className={`${accent} h-3 w-3 rounded-xs`} />
+            <div className={`${accent} h-3 w-3 rounded-xs`} />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (templateId === "tier-list") {
+    const colors = ["bg-red-600", "bg-orange-500", "bg-yellow-500", "bg-green-600"];
+    return (
+      <div className="flex flex-col gap-0.5">
+        {colors.map((color, i) => (
+          <div key={i} className="flex gap-0.5">
+            <div
+              className={`${color} h-3 w-4 text-[6px] font-bold text-white flex items-center justify-center`}
+            >
+              {["S", "A", "B", "C"][i]}
+            </div>
+            <div className={`${accent} h-3 w-4 rounded-xs`} />
+            <div className={`${accent} h-3 w-4 rounded-xs`} />
+            <div className={`${accent} h-3 w-4 rounded-xs`} />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  return <div className={`${accent} h-8 w-12 rounded-sm`} />;
 }

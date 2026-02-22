@@ -14,6 +14,7 @@ import './templates/grid-3x3'
 import './templates/hero'
 import './templates/minimal-banner'
 import './templates/hero-plus'
+import './templates/tier-list'
 
 export interface ListImageInput {
   listId: string
@@ -24,9 +25,12 @@ export interface ListImageInput {
     coverImageUrl: string | null
     asin: string
     title?: string
+    tier?: string | null
   }>
   templateId: string
   sizes?: string[]
+  /** For tier lists: ordered tier labels (e.g., ['S', 'A', 'B', 'C']) */
+  tierLabels?: string[]
 }
 
 export interface GeneratedImages {
@@ -61,13 +65,29 @@ export async function generateListImages(
     // Get slot specs for this size
     const slotSpecs = template.getSlotSpecs(size as 'og' | 'square')
 
-    // Select first N covers based on template slot count
-    const coverUrls = input.books
+    // Select covers — for tier lists, order by tier; otherwise take first N
+    let orderedBooks = input.books
+    if (input.tierLabels && input.tierLabels.length > 0) {
+      // Order books by tier label order, then take first N for each tier
+      orderedBooks = input.tierLabels.flatMap((label) =>
+        input.books.filter((b) => b.tier === label)
+      )
+    }
+    const coverUrls = orderedBooks
       .slice(0, template.slotCount)
       .map((book) => book.coverImageUrl)
 
     // Fetch and encode covers (with placeholders for missing/failed)
     const covers = await fetchCovers(coverUrls, slotSpecs)
+
+    // Build tier data if this is a tier list
+    let tiers: { label: string; coverCount: number }[] | undefined
+    if (input.tierLabels && input.tierLabels.length > 0) {
+      tiers = input.tierLabels.map((label) => ({
+        label,
+        coverCount: input.books.filter((b) => b.tier === label).length,
+      }))
+    }
 
     // Build template props
     const templateProps = {
@@ -77,6 +97,7 @@ export async function generateListImages(
       description: input.description,
       username: input.username,
       covers,
+      tiers,
     }
 
     // Render template to PNG

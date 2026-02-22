@@ -15,6 +15,7 @@ import '@/lib/image-generator/templates/grid-3x3';
 import '@/lib/image-generator/templates/hero';
 import '@/lib/image-generator/templates/minimal-banner';
 import '@/lib/image-generator/templates/hero-plus';
+import '@/lib/image-generator/templates/tier-list';
 
 function enrichItemsWithMetadata(
   items: any[],
@@ -261,6 +262,8 @@ async function triggerImageGeneration(list: {
   id: string;
   name: string;
   description: string | null;
+  type: string;
+  tiers: unknown;
   imageTemplateId: string | null;
   imageVersion: number;
   userId: string;
@@ -272,7 +275,7 @@ async function triggerImageGeneration(list: {
     // Fetch items with metadata for cover images
     const items = await prisma.listItem.findMany({
       where: { listId: list.id },
-      orderBy: { position: 'asc' },
+      orderBy: [{ tier: 'asc' }, { position: 'asc' }],
     });
 
     const { fetchTitleMetadataBatch } = await import('@/lib/audnex');
@@ -283,6 +286,7 @@ async function triggerImageGeneration(list: {
       asin: item.titleAsin,
       coverImageUrl: metadata[idx]?.image || null,
       title: metadata[idx]?.title || item.titleAsin,
+      tier: item.tier,
     }));
 
     // Fetch user for username
@@ -291,6 +295,11 @@ async function triggerImageGeneration(list: {
       select: { username: true, name: true },
     });
 
+    // Build tier labels for tier lists
+    const tierLabels = list.type === 'TIER' && Array.isArray(list.tiers)
+      ? (list.tiers as string[])
+      : undefined;
+
     const images = await generateListImages({
       listId: list.id,
       title: list.name,
@@ -298,6 +307,7 @@ async function triggerImageGeneration(list: {
       username: user?.username || user?.name || 'Unknown',
       books,
       templateId: list.imageTemplateId!,
+      tierLabels,
     });
 
     // Upload to S3

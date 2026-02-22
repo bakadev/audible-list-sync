@@ -22,6 +22,7 @@ import '@/lib/image-generator/templates/grid-3x3'
 import '@/lib/image-generator/templates/hero'
 import '@/lib/image-generator/templates/minimal-banner'
 import '@/lib/image-generator/templates/hero-plus'
+import '@/lib/image-generator/templates/tier-list'
 
 export default async function AdminTemplatesPage() {
   const templates = getTemplateList()
